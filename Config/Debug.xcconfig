@@ -1,0 +1,15 @@
+#include "Base.xcconfig"
+
+// Staging / local default. Point at a locally-running panel-api by changing
+// API_HOST to your machine's LAN IP (the simulator can reach localhost, a
+// physical device cannot). Swagger lives at <origin>/docs.
+//
+// Local dev convenience: ATS is relaxed for cleartext ONLY in Debug so you can
+// hit http://localhost:4000 without TLS. Release keeps ATS fully on.
+API_SCHEME = http
+API_HOST = localhost:4000
+WEB_SCHEME = https
+WEB_HOST = staging.refxhosting.com
+
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) DEBUG
+ONLY_ACTIVE_ARCH = YES

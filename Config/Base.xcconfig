@@ -1,0 +1,10 @@
+// Shared build settings + Info.plist-substituted runtime values.
+// Per-config overrides live in Debug.xcconfig / Release.xcconfig.
+//
+// NOTE: a literal "//" breaks xcconfig parsing (it's a comment marker), so the
+// URL scheme + host are kept as separate keys and recombined in AppConfig.
+
+// URL scheme for the API origin (https in prod — ATS stays on).
+API_SCHEME = https
+// Web origin scheme for "open in browser" link-outs.
+WEB_SCHEME = https

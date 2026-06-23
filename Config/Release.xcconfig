@@ -1,0 +1,9 @@
+#include "Base.xcconfig"
+
+// Production defaults. HTTPS only — ATS stays fully enabled.
+API_SCHEME = https
+API_HOST = panel.refxhosting.com
+WEB_SCHEME = https
+WEB_HOST = refxhosting.com
+
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited)
