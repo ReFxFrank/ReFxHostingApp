@@ -25,6 +25,7 @@ final class AppSession: ObservableObject {
     // Feature services (constructed once the graph is up).
     private(set) lazy var servers = ServersService(client: client)
     private(set) lazy var account = AccountService(client: client)
+    private(set) lazy var files = FilesService(client: client)
 
     private var didWireClient = false
 

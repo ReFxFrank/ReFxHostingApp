@@ -100,6 +100,14 @@ private struct OverviewTab: View {
                     GaugeRow(snapshot: snapshot)
                 }
 
+                NavigationLink {
+                    FilesBrowserView(serverId: model.serverId)
+                } label: {
+                    ManageRow(icon: "folder", title: "Files",
+                              subtitle: "Browse and edit configs")
+                }
+                .buttonStyle(.plain)
+
                 if let error = model.actionError {
                     Text(error).font(.footnote).foregroundStyle(.appDestructive)
                 }
@@ -135,5 +143,27 @@ struct ConnectionIndicator: View {
         case .connecting, .reconnecting: return .appWarning
         default: return .appMuted
         }
+    }
+}
+
+/// A tappable management row (Files, and future: backups, schedules…).
+struct ManageRow: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).foregroundStyle(.appPrimary).frame(width: 26)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).foregroundStyle(.appForeground)
+                Text(subtitle).font(.caption).foregroundStyle(.appMuted)
+            }
+            Spacer()
+            Image(systemName: "chevron.right").font(.caption).foregroundStyle(.appMuted)
+        }
+        .padding(Theme.cardPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardSurface()
     }
 }
