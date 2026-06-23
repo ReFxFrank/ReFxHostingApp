@@ -66,7 +66,7 @@ actor APIClient {
 
     /// Build, send, handle 401→refresh→retry-once, and surface non-2xx as APIError.
     private func perform(_ endpoint: Endpoint, isRetry: Bool = false) async throws -> Data {
-        let request = try buildRequest(endpoint)
+        let request = try await buildRequest(endpoint)
         let data: Data
         let response: URLResponse
         do {
@@ -104,7 +104,7 @@ actor APIClient {
         }
     }
 
-    private func buildRequest(_ endpoint: Endpoint) throws -> URLRequest {
+    private func buildRequest(_ endpoint: Endpoint) async throws -> URLRequest {
         guard let url = endpoint.url(base: config.apiBaseURL) else {
             throw APIError.decoding("Bad URL for \(endpoint.path)")
         }

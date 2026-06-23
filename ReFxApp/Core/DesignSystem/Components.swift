@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// A circular CPU/RAM/disk gauge with a label and used/total caption.
 struct ResourceGauge: View {

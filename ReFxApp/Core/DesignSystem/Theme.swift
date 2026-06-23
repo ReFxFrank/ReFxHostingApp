@@ -3,6 +3,11 @@ import SwiftUI
 /// Color tokens mirrored from the web panel's dark theme
 /// (`apps/web` CSS variables). The panel ships HSL tokens, so we build `Color`
 /// from HSL directly to match the palette exactly. Primary brand = #0072FF.
+///
+/// Tokens live on `ShapeStyle where Self == Color` so the leading-dot shorthand
+/// works in SwiftUI style contexts (`.foregroundStyle(.appMuted)`,
+/// `.tint(.appPrimary)`, `.fill(.appCard)`) AND they remain reachable as
+/// `Color.appBackground` for `View`/background uses.
 extension Color {
     /// Build a Color from HSL degrees/percent (SwiftUI's initializer is HSB).
     init(h: Double, s: Double, l: Double, opacity: Double = 1) {
@@ -23,20 +28,22 @@ extension Color {
         }
         self.init(.sRGB, red: r + m, green: g + m, blue: b + m, opacity: opacity)
     }
+}
 
+extension ShapeStyle where Self == Color {
     // Dark-theme tokens (apps/web globals.css `.dark`).
-    static let appBackground = Color(h: 218, s: 47, l: 5)
-    static let appCard = Color(h: 217, s: 47, l: 11)        // #101a2b
-    static let appCardElevated = Color(h: 217, s: 44, l: 14)
-    static let appPopover = Color(h: 217, s: 49, l: 9)
-    static let appForeground = Color(h: 213, s: 100, l: 97)
-    static let appMuted = Color(h: 213, s: 45, l: 72)       // muted-foreground
-    static let appBorder = Color(h: 217, s: 40, l: 20)
-    static let appPrimary = Color(h: 213, s: 100, l: 50)    // #0072ff
-    static let appAccent = Color(h: 215, s: 40, l: 17)
-    static let appSuccess = Color(h: 152, s: 58, l: 45)
-    static let appWarning = Color(h: 38, s: 92, l: 52)
-    static let appDestructive = Color(h: 0, s: 72, l: 55)
+    static var appBackground: Color { Color(h: 218, s: 47, l: 5) }
+    static var appCard: Color { Color(h: 217, s: 47, l: 11) }          // #101a2b
+    static var appCardElevated: Color { Color(h: 217, s: 44, l: 14) }
+    static var appPopover: Color { Color(h: 217, s: 49, l: 9) }
+    static var appForeground: Color { Color(h: 213, s: 100, l: 97) }
+    static var appMuted: Color { Color(h: 213, s: 45, l: 72) }         // muted-foreground
+    static var appBorder: Color { Color(h: 217, s: 40, l: 20) }
+    static var appPrimary: Color { Color(h: 213, s: 100, l: 50) }      // #0072ff
+    static var appAccent: Color { Color(h: 215, s: 40, l: 17) }
+    static var appSuccess: Color { Color(h: 152, s: 58, l: 45) }
+    static var appWarning: Color { Color(h: 38, s: 92, l: 52) }
+    static var appDestructive: Color { Color(h: 0, s: 72, l: 55) }
 }
 
 enum Theme {

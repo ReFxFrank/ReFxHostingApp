@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Start / Restart / Stop (+ Kill) — two taps from the home screen. Destructive
 /// signals confirm first; all are debounced and disabled mid-transition. Power
