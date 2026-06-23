@@ -11,13 +11,11 @@ on:
 
 jobs:
   build-test:
-    runs-on: macos-14
-    timeout-minutes: 30
+    # macos-15 ships Xcode 16, which reads the project format XcodeGen emits.
+    runs-on: macos-15
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
-
-      - name: Select Xcode
-        run: sudo xcode-select -switch /Applications/Xcode_15.4.app
 
       - name: Show versions
         run: xcodebuild -version && swift --version
@@ -28,14 +26,22 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
-      # Build for the Simulator (no code signing needed). Pins a simulator that
-      # exists on the macos-14 image.
+      # Pick any available iPhone simulator so we don't hard-code a device name
+      # that may not exist on the image.
+      - name: Pick a simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j \
+            | jq -r '[.devices[] | .[] | select(.name | test("iPhone"))][0].udid')
+          echo "Using simulator $UDID"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+
       - name: Build & test
         run: |
           xcodebuild \
             -project ReFxApp.xcodeproj \
             -scheme "ReFxApp (Debug)" \
-            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
             -skipPackagePluginValidation \
             clean build test \
             CODE_SIGNING_ALLOWED=NO
