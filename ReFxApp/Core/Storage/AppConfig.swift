@@ -19,14 +19,18 @@ final class AppConfig: ObservableObject {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        // Fallbacks are the LIVE platform so the app works out of the box even
+        // if the .xcconfig -> Info.plist substitution doesn't reach the bundle
+        // (it isn't reliable across Xcode/XcodeGen versions). Settings override
+        // still wins; the Info.plist values, when present, win over these.
         self.apiOrigin = AppConfig.resolve(
             override: defaults.string(forKey: Keys.apiOriginOverride),
             schemeKey: "ReFxAPIScheme", hostKey: "ReFxAPIHost",
-            fallback: "https://panel.refxhosting.com")
+            fallback: "https://api.refx.gg")
         self.webOrigin = AppConfig.resolve(
             override: defaults.string(forKey: Keys.webOriginOverride),
             schemeKey: "ReFxWebScheme", hostKey: "ReFxWebHost",
-            fallback: "https://refxhosting.com")
+            fallback: "https://refx.gg")
     }
 
     /// Base for all REST calls, e.g. `https://panel.refxhosting.com/api/v1`.
@@ -66,7 +70,10 @@ final class AppConfig: ObservableObject {
         let info = Bundle.main.infoDictionary
         let scheme = (info?[schemeKey] as? String)?.trimmed ?? "https"
         let host = (info?[hostKey] as? String)?.trimmed ?? ""
-        if !host.isEmpty, let url = URL(string: "\(scheme)://\(host)") {
+        // Ignore empty or unexpanded ("$(API_HOST)") Info.plist values and use
+        // the live-platform fallback instead of a broken URL.
+        let usable = !host.isEmpty && !host.contains("$(") && !scheme.contains("$(")
+        if usable, let url = URL(string: "\(scheme)://\(host)"), url.host != nil {
             return url
         }
         return URL(string: fallback)!
