@@ -57,8 +57,7 @@ actor APIClient {
     }
 
     /// For 204 / empty-body mutations.
-    @discardableResult
-    func sendVoid(_ endpoint: Endpoint) async throws -> Void {
+    func sendVoid(_ endpoint: Endpoint) async throws {
         _ = try await perform(endpoint)
     }
 
