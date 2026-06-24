@@ -33,6 +33,7 @@ final class AppSession: ObservableObject {
     private(set) lazy var databases = DatabasesService(client: client)
     private(set) lazy var subUsers = SubUsersService(client: client)
     private(set) lazy var switchGame = SwitchGameService(client: client)
+    private(set) lazy var support = SupportService(client: client)
 
     private var didWireClient = false
 

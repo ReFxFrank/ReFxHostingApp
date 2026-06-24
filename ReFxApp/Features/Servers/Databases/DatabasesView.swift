@@ -142,7 +142,7 @@ struct CreateDatabaseSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Database") {
+                Section {
                     Picker("Engine", selection: $engine) {
                         Text("MySQL").tag(DbEngine.mysql)
                         Text("MariaDB").tag(DbEngine.mariadb)
@@ -151,6 +151,8 @@ struct CreateDatabaseSheet: View {
                         .textInputAutocapitalization(.never).autocorrectionDisabled()
                     TextField("Remote access pattern", text: $remoteAccess)
                         .textInputAutocapitalization(.never).autocorrectionDisabled()
+                } header: {
+                    Text("Database")
                 } footer: {
                     Text("Use \"%\" to allow any host, or a CIDR like 10.0.0.0/8.")
                 }

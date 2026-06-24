@@ -146,7 +146,7 @@ struct CreateScheduleSheet: View {
                         .font(.callout.monospaced()).textInputAutocapitalization(.never).autocorrectionDisabled()
                     Toggle("Only when online", isOn: $onlyWhenOnline)
                 }
-                Section("Task") {
+                Section {
                     Picker("Action", selection: $action) {
                         Text("Power").tag(ScheduleAction.power)
                         Text("Command").tag(ScheduleAction.command)
@@ -154,6 +154,8 @@ struct CreateScheduleSheet: View {
                     }
                     TextField(payloadHint, text: $payload)
                         .textInputAutocapitalization(.never).autocorrectionDisabled()
+                } header: {
+                    Text("Task")
                 } footer: {
                     Text(payloadHint)
                 }
