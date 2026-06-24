@@ -130,6 +130,12 @@ private struct ServerDetailContent: View {
         case .switchGame:
             NavigationLink { SwitchGameView(serverId: model.serverId) } label: { label }
                 .buttonStyle(.plain)
+        case .workshop:
+            NavigationLink { WorkshopView(serverId: model.serverId) } label: { label }
+                .buttonStyle(.plain)
+        case .minecraft:
+            NavigationLink { MinecraftView(serverId: model.serverId) } label: { label }
+                .buttonStyle(.plain)
         default:
             if section.isWebLinkOut {
                 Button {
