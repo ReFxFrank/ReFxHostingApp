@@ -1,9 +1,7 @@
 import SwiftUI
 
-/// Staff section placeholder for Phase 1 (visible only to SUPPORT/ADMIN/OWNER).
-/// Phase 3 fills this in: support queue triage, server admin (restart any
-/// customer server), node health/ping/restart-agent, user admin — against
-/// `admin.controller.ts`, `nodes.controller.ts`, `support.controller.ts`.
+/// Staff section (SUPPORT/ADMIN/OWNER). Support queue is open to all staff;
+/// server/node/user admin are ADMIN+. The API enforces this regardless.
 struct StaffHomeView: View {
     let role: UserRole
 
@@ -11,18 +9,32 @@ struct StaffHomeView: View {
         NavigationStack {
             List {
                 Section {
-                    StaffStubRow(icon: "ticket", title: "Support queue",
-                                 subtitle: "Triage, reply, assign")
-                    StaffStubRow(icon: "server.rack", title: "Server admin",
-                                 subtitle: "Restart any customer server")
-                    if role.isAdmin {
-                        StaffStubRow(icon: "externaldrive.connected.to.line.below",
-                                     title: "Node health", subtitle: "Ping, restart agent")
-                        StaffStubRow(icon: "person.2", title: "User admin",
-                                     subtitle: "Roles, suspend, credit")
+                    NavigationLink {
+                        StaffQueueView()
+                    } label: {
+                        StaffMenuRow(icon: "ticket", title: "Support queue",
+                                     subtitle: "Triage, reply, assign")
                     }
-                } footer: {
-                    Text("Staff remote ops arrive in Phase 3.")
+                    NavigationLink {
+                        AdminServersView()
+                    } label: {
+                        StaffMenuRow(icon: "server.rack", title: "Server admin",
+                                     subtitle: "Manage / restart any server")
+                    }
+                    if role.isAdmin {
+                        NavigationLink {
+                            NodeAdminView()
+                        } label: {
+                            StaffMenuRow(icon: "externaldrive.connected.to.line.below",
+                                         title: "Node health", subtitle: "Ping, restart agent")
+                        }
+                        NavigationLink {
+                            UserAdminView()
+                        } label: {
+                            StaffMenuRow(icon: "person.2", title: "User admin",
+                                         subtitle: "Suspend, role, search")
+                        }
+                    }
                 }
                 .listRowBackground(Color.appCard)
             }
@@ -33,7 +45,7 @@ struct StaffHomeView: View {
     }
 }
 
-private struct StaffStubRow: View {
+struct StaffMenuRow: View {
     let icon: String, title: String, subtitle: String
     var body: some View {
         HStack(spacing: 12) {
@@ -42,8 +54,6 @@ private struct StaffStubRow: View {
                 Text(title).foregroundStyle(.appForeground)
                 Text(subtitle).font(.caption).foregroundStyle(.appMuted)
             }
-            Spacer()
-            Text("Soon").font(.caption2).foregroundStyle(.appMuted)
         }
         .padding(.vertical, 4)
     }

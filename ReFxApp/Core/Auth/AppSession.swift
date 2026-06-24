@@ -36,6 +36,7 @@ final class AppSession: ObservableObject {
     private(set) lazy var support = SupportService(client: client)
     private(set) lazy var workshop = WorkshopService(client: client)
     private(set) lazy var minecraft = MinecraftService(client: client)
+    private(set) lazy var staff = StaffService(client: client)
 
     private var didWireClient = false
 

@@ -5,10 +5,13 @@ import Foundation
 struct SupportService {
     let client: APIClient
 
-    func tickets(page: Int = 1, mine: Bool = false) async throws -> Page<Ticket> {
+    func tickets(page: Int = 1, mine: Bool = false, state: TicketState? = nil) async throws -> Page<Ticket> {
         var query = [URLQueryItem(name: "page", value: String(page)),
                      URLQueryItem(name: "pageSize", value: "25")]
         if mine { query.append(URLQueryItem(name: "mine", value: "true")) }
+        if let state, state != .unknown {
+            query.append(URLQueryItem(name: "state", value: state.rawValue))
+        }
         return try await client.sendPaginated(.get("support/tickets", query: query))
     }
 
@@ -26,6 +29,21 @@ struct SupportService {
         try await client.sendVoid(.post("support/tickets/\(id)/messages", body: ReplyBody(body: body)))
     }
 
+    // MARK: Staff actions
+
+    func update(_ id: String, state: TicketState? = nil, priority: TicketPriority? = nil) async throws {
+        try await client.sendVoid(.patch("support/tickets/\(id)",
+                                          body: UpdateBody(state: state?.rawValue,
+                                                           priority: priority?.rawValue)))
+    }
+
+    func assign(_ id: String, assigneeId: String) async throws {
+        try await client.sendVoid(.post("support/tickets/\(id)/assign",
+                                         body: AssignBody(assigneeId: assigneeId)))
+    }
+
     private struct CreateBody: Encodable { let subject: String; let body: String; let priority: String? }
     private struct ReplyBody: Encodable { let body: String }
+    private struct UpdateBody: Encodable { let state: String?; let priority: String? }
+    private struct AssignBody: Encodable { let assigneeId: String }
 }

@@ -41,6 +41,28 @@ final class TicketDetailViewModel: ObservableObject {
         } catch let error as APIError { actionError = error.userMessage }
         catch { actionError = "Couldn't send your reply." }
     }
+
+    // MARK: Staff actions
+
+    func setState(_ newState: TicketState) async {
+        await staffRun { try await $0.update(self.ticketId, state: newState) }
+    }
+
+    func setPriority(_ priority: TicketPriority) async {
+        await staffRun { try await $0.update(self.ticketId, priority: priority) }
+    }
+
+    func assign(to userId: String) async {
+        await staffRun { try await $0.assign(self.ticketId, assigneeId: userId) }
+    }
+
+    private func staffRun(_ work: (SupportService) async throws -> Void) async {
+        guard let service else { return }
+        actionError = nil
+        do { try await work(service); await load() }
+        catch let error as APIError { actionError = error.userMessage }
+        catch { actionError = "Action failed. Try again." }
+    }
 }
 
 struct TicketDetailView: View {
@@ -68,7 +90,36 @@ struct TicketDetailView: View {
         .screenBackground()
         .navigationTitle(subject)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if session.currentUser?.globalRole.isStaff == true {
+                ToolbarItem(placement: .topBarTrailing) { staffMenu }
+            }
+        }
         .task { model.bind(session); await model.load() }
+    }
+
+    private var staffMenu: some View {
+        Menu {
+            Section("Set status") {
+                Button("Open") { Task { await model.setState(.open) } }
+                Button("Awaiting customer") { Task { await model.setState(.pendingCustomer) } }
+                Button("Resolved") { Task { await model.setState(.resolved) } }
+                Button("Closed") { Task { await model.setState(.closed) } }
+            }
+            Section("Priority") {
+                Button("Low") { Task { await model.setPriority(.low) } }
+                Button("Normal") { Task { await model.setPriority(.normal) } }
+                Button("High") { Task { await model.setPriority(.high) } }
+                Button("Urgent") { Task { await model.setPriority(.urgent) } }
+            }
+            if let myId = session.currentUser?.id {
+                Button { Task { await model.assign(to: myId) } } label: {
+                    Label("Assign to me", systemImage: "person.crop.circle.badge.checkmark")
+                }
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+        }
     }
 
     private func thread(_ detail: TicketDetail) -> some View {
