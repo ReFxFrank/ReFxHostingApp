@@ -19,6 +19,11 @@
     <key>CFBundleVersion</key>
     <string>$(CURRENT_PROJECT_VERSION)</string>
 
+    <!-- The app uses only standard HTTPS/TLS (exempt encryption), so TestFlight
+         won't prompt for export-compliance docs on each upload. -->
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
+
     <!-- Default API/Web origins, injected from the active .xcconfig. Overridable
          at runtime in Settings (persisted to UserDefaults; never holds tokens). -->
     <key>ReFxAPIScheme</key>
