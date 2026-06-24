@@ -109,5 +109,8 @@ struct ReFxServersWidget: Widget {
 struct ReFxWidgetBundle: WidgetBundle {
     var body: some Widget {
         ReFxServersWidget()
+        if #available(iOS 16.1, *) {
+            ServerOpLiveActivity()
+        }
     }
 }

@@ -24,6 +24,10 @@
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
 
+    <!-- Live Activities (server op progress on the lock screen / Dynamic Island). -->
+    <key>NSSupportsLiveActivities</key>
+    <true/>
+
     <!-- Deep-link scheme used by the Home Screen widget (refxapp://servers). -->
     <key>CFBundleURLTypes</key>
     <array>

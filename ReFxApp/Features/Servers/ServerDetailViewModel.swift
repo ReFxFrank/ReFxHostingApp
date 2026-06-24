@@ -10,8 +10,15 @@ final class ServerDetailViewModel: ObservableObject {
     @Published var actionError: String?
 
     /// The live state always wins over the last-loaded REST state once the
-    /// socket starts pushing `power`/`stats` frames.
-    @Published var liveState: ServerState?
+    /// socket starts pushing `power`/`stats` frames. Changes drive the Live
+    /// Activity (install/restart/game-switch progress on the lock screen).
+    @Published var liveState: ServerState? {
+        didSet {
+            guard let state = liveState, state != oldValue, let server = server else { return }
+            LiveActivityManager.sync(serverId: serverId, name: server.name,
+                                     game: server.gameName, state: state)
+        }
+    }
 
     let serverId: String
     private(set) var socket: ConsoleSocket?
