@@ -46,6 +46,11 @@ struct DashboardView: View {
         .task {
             model.bind(session)
             if model.state.value == nil { await model.load() }
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 20_000_000_000)
+                if Task.isCancelled { break }
+                await model.refresh()
+            }
         }
     }
 

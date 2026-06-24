@@ -70,6 +70,12 @@ final class ServerDetailViewModel: ObservableObject {
         guard let service else { return }
         if let live = try? await service.stats(serverId) {
             snapshot = ResourceSnapshot(live: live, diskTotalMb: diskTotalMb)
+            // The live stats carry the agent's current state — use it so the
+            // pill is accurate on open instead of showing the stale REST state
+            // until the first socket frame arrives.
+            if let raw = live.state, let state = ServerState(rawValue: raw) {
+                liveState = state
+            }
         }
     }
 

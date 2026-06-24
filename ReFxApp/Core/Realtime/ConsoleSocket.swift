@@ -94,13 +94,16 @@ final class ConsoleSocket: ObservableObject {
 
     @MainActor
     private func buildAndConnect(token: String) {
+        // Mirror the web client: allow BOTH transports so a blocked websocket
+        // upgrade falls back to long-polling instead of silently never
+        // connecting. (Forcing websockets was the bug behind "console doesn't
+        // live-update".)
         let manager = SocketManager(socketURL: origin, config: [
             .log(false),
             .compress,
-            .forceWebsockets(true),
             .reconnects(true),
             .reconnectWait(2),
-            .reconnectWaitMax(30),
+            .reconnectWaitMax(15),
             .reconnectAttempts(-1),
             .handleQueue(DispatchQueue.main),
             .extraHeaders(["Authorization": "Bearer \(token)"]),

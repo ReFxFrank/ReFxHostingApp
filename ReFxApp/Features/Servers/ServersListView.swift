@@ -28,6 +28,13 @@ struct ServersListView: View {
         .task {
             model.bind(session.servers)
             if model.state.value == nil { await model.load() }
+            // Live-refresh while visible so state pills don't go stale (the web
+            // panel refetches on a similar interval). Cancelled on disappear.
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 12_000_000_000)
+                if Task.isCancelled { break }
+                await model.refresh()
+            }
         }
     }
 
