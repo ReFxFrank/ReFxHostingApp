@@ -118,6 +118,9 @@ private struct ServerDetailContent: View {
         case .backups:
             NavigationLink { BackupsView(serverId: model.serverId) } label: { label }
                 .buttonStyle(.plain)
+        case .settings:
+            NavigationLink { ServerSettingsView(serverId: model.serverId) } label: { label }
+                .buttonStyle(.plain)
         default:
             if section.isWebLinkOut {
                 Button {
