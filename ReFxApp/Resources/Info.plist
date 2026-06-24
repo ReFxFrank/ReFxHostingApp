@@ -24,6 +24,19 @@
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
 
+    <!-- Deep-link scheme used by the Home Screen widget (refxapp://servers). -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>com.refx.app</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>refxapp</string>
+            </array>
+        </dict>
+    </array>
+
     <!-- Default API/Web origins, injected from the active .xcconfig. Overridable
          at runtime in Settings (persisted to UserDefaults; never holds tokens). -->
     <key>ReFxAPIScheme</key>

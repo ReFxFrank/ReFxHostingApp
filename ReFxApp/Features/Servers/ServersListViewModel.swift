@@ -42,6 +42,7 @@ final class ServersListViewModel: ObservableObject {
             loadedPages = page.items
             meta = page.meta
             state = .loaded(loadedPages)
+            WidgetBridge.publish(servers: loadedPages)
         } catch let error as APIError {
             state = .failed(error)
         } catch {
@@ -58,6 +59,7 @@ final class ServersListViewModel: ObservableObject {
             loadedPages = page.items
             meta = page.meta
             state = .loaded(loadedPages)
+            WidgetBridge.publish(servers: loadedPages)
         } catch {
             // Keep showing the last good data on a refresh failure.
             if state.value == nil { await load() }
