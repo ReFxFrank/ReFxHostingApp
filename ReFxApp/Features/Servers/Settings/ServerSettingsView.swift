@@ -114,6 +114,7 @@ struct ServerSettingsView: View {
 
             startupSection
             variablesSection
+            accessSection
             dangerSection
         }
         .scrollContentBackground(.hidden)
@@ -207,6 +208,19 @@ struct ServerSettingsView: View {
             }
         } header: {
             Text("Environment variables")
+        }
+        .listRowBackground(Color.appCard)
+    }
+
+    private var accessSection: some View {
+        Section {
+            NavigationLink {
+                SubUsersView(serverId: model.serverId)
+            } label: {
+                Label("Sub-users", systemImage: "person.2")
+            }
+        } header: {
+            Text("Access")
         }
         .listRowBackground(Color.appCard)
     }

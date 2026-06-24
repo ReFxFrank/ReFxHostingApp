@@ -121,6 +121,15 @@ private struct ServerDetailContent: View {
         case .settings:
             NavigationLink { ServerSettingsView(serverId: model.serverId) } label: { label }
                 .buttonStyle(.plain)
+        case .schedules:
+            NavigationLink { SchedulesView(serverId: model.serverId) } label: { label }
+                .buttonStyle(.plain)
+        case .databases:
+            NavigationLink { DatabasesView(serverId: model.serverId) } label: { label }
+                .buttonStyle(.plain)
+        case .switchGame:
+            NavigationLink { SwitchGameView(serverId: model.serverId) } label: { label }
+                .buttonStyle(.plain)
         default:
             if section.isWebLinkOut {
                 Button {
