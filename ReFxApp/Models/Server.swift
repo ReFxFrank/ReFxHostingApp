@@ -64,9 +64,12 @@ struct Allocation: Codable, Identifiable, Equatable {
 }
 
 struct GameTemplateRef: Codable, Equatable {
-    let id: String
+    // id is absent in some projections (e.g. the dashboard summary selects only
+    // name + slug), so it's optional to keep those payloads decodable.
+    let id: String?
     let name: String?
     let slug: String?
+    let supportsWorkshop: Bool?
 }
 
 struct NodeRef: Codable, Equatable {

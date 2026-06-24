@@ -26,6 +26,7 @@ final class AppSession: ObservableObject {
     private(set) lazy var servers = ServersService(client: client)
     private(set) lazy var account = AccountService(client: client)
     private(set) lazy var files = FilesService(client: client)
+    private(set) lazy var dashboard = DashboardService(client: client)
 
     private var didWireClient = false
 

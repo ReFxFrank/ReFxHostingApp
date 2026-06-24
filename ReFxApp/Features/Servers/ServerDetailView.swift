@@ -1,5 +1,9 @@
 import SwiftUI
 
+/// The server screen: a scrollable overview (status, power, live gauges,
+/// connection) followed by the full **section menu** mirroring the web client
+/// area's sidebar. Sections push native screens where built (Console, Files) and
+/// otherwise offer an "open on web" fallback so every feature is reachable.
 struct ServerDetailView: View {
     @EnvironmentObject private var session: AppSession
     @StateObject private var model: ServerDetailViewModel
@@ -32,33 +36,33 @@ struct ServerDetailView: View {
 private struct ServerDetailContent: View {
     @ObservedObject var model: ServerDetailViewModel
     @ObservedObject var socket: ConsoleSocket
-    @State private var tab: Section = .overview
-
-    enum Section: String, CaseIterable, Identifiable {
-        case overview = "Overview", console = "Console", monitor = "Monitor"
-        var id: String { rawValue }
-    }
+    @EnvironmentObject private var config: AppConfig
 
     /// Socket truth wins for the header pill.
     private var state: ServerState { socket.liveState ?? model.effectiveState }
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            Picker("Section", selection: $tab) {
-                ForEach(Section.allCases) { Text($0.rawValue).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 16).padding(.vertical, 10)
+        ScrollView {
+            VStack(spacing: 16) {
+                header
+                PowerControlsView(model: model, state: state)
 
-            switch tab {
-            case .overview:
-                OverviewTab(model: model, state: state)
-            case .console:
-                ConsoleView(socket: socket)
-            case .monitor:
-                MonitorView(model: model, socket: socket)
+                if let connection = model.server?.connectionString {
+                    CopyChip(label: "Address", value: connection)
+                }
+
+                if let snapshot = model.snapshot {
+                    GaugeRow(snapshot: snapshot)
+                }
+
+                if let error = model.actionError {
+                    Text(error).font(.footnote).foregroundStyle(.appDestructive)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                sectionMenu
             }
+            .padding(16)
         }
         .onChange(of: socket.latestStats) { frame in
             if let frame { model.ingest(frame: frame) }
@@ -67,7 +71,7 @@ private struct ServerDetailContent: View {
 
     private var header: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(model.server?.gameName ?? "—")
                     .font(.subheadline).foregroundStyle(.appMuted)
                 StatePill(state: state)
@@ -75,45 +79,86 @@ private struct ServerDetailContent: View {
             Spacer()
             ConnectionIndicator(state: socket.connectionState)
         }
-        .padding(.horizontal, 16).padding(.top, 8)
+    }
+
+    @ViewBuilder
+    private var sectionMenu: some View {
+        if let server = model.server {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Manage").font(.caption.weight(.semibold)).foregroundStyle(.appMuted)
+                    .padding(.leading, 4)
+                VStack(spacing: 10) {
+                    if server.state == .pendingPayment {
+                        Button {
+                            WebLink.open(config.webOrigin, path: "billing")
+                        } label: {
+                            ManageRow(icon: "creditcard", title: "Pay now",
+                                      subtitle: "Activate this server", accent: .appWarning)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    ForEach(ServerSection.sections(for: server)) { section in
+                        sectionRow(section, server: server)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func sectionRow(_ section: ServerSection, server: Server) -> some View {
+        let label = ManageRow(icon: section.icon, title: section.label, subtitle: section.subtitle)
+        switch section {
+        case .console:
+            NavigationLink { ConsoleScreen(socket: socket) } label: { label }
+                .buttonStyle(.plain)
+        case .files:
+            NavigationLink { FilesBrowserView(serverId: model.serverId) } label: { label }
+                .buttonStyle(.plain)
+        default:
+            if section.isWebLinkOut {
+                Button {
+                    WebLink.open(config.webOrigin, path: "servers/\(model.serverId)/\(section.webPath)")
+                } label: { label }
+                .buttonStyle(.plain)
+            } else {
+                NavigationLink {
+                    SectionStubView(section: section, serverId: model.serverId)
+                } label: { label }
+                .buttonStyle(.plain)
+            }
+        }
     }
 }
 
-private struct OverviewTab: View {
-    @ObservedObject var model: ServerDetailViewModel
-    let state: ServerState
+/// Console as its own pushed screen. The socket (and its buffer) lives on the
+/// detail view model, so it stays connected and the scrollback survives push/pop.
+struct ConsoleScreen: View {
+    @ObservedObject var socket: ConsoleSocket
+    var body: some View {
+        ConsoleView(socket: socket)
+            .navigationTitle("Console")
+            .navigationBarTitleDisplayMode(.inline)
+            .screenBackground()
+    }
+}
+
+/// Placeholder for a section whose native screen isn't built yet. Offers an
+/// "open on web" fallback so the feature is still reachable.
+struct SectionStubView: View {
+    let section: ServerSection
+    let serverId: String
+    @EnvironmentObject private var config: AppConfig
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                PowerControlsView(model: model, state: state)
-
-                if let connection = model.server?.connectionString {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Connection").font(.caption.weight(.semibold))
-                            .foregroundStyle(.appMuted)
-                        CopyChip(label: "Address", value: connection)
-                    }
-                }
-
-                if let snapshot = model.snapshot {
-                    GaugeRow(snapshot: snapshot)
-                }
-
-                NavigationLink {
-                    FilesBrowserView(serverId: model.serverId)
-                } label: {
-                    ManageRow(icon: "folder", title: "Files",
-                              subtitle: "Browse and edit configs")
-                }
-                .buttonStyle(.plain)
-
-                if let error = model.actionError {
-                    Text(error).font(.footnote).foregroundStyle(.appDestructive)
-                }
-            }
-            .padding(16)
-        }
+        ComingSoonView(
+            icon: section.icon,
+            title: section.label,
+            message: "A native \(section.label) screen is on the way. For now you can manage this on the web.",
+            actionTitle: "Open on web",
+            action: { WebLink.open(config.webOrigin, path: "servers/\(serverId)/\(section.webPath)") })
+        .navigationTitle(section.label)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -146,15 +191,16 @@ struct ConnectionIndicator: View {
     }
 }
 
-/// A tappable management row (Files, and future: backups, schedules…).
+/// A tappable management row used in the server section menu.
 struct ManageRow: View {
     let icon: String
     let title: String
     let subtitle: String
+    var accent: Color = .appPrimary
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).foregroundStyle(.appPrimary).frame(width: 26)
+            Image(systemName: icon).foregroundStyle(accent).frame(width: 26)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).foregroundStyle(.appForeground)
                 Text(subtitle).font(.caption).foregroundStyle(.appMuted)

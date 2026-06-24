@@ -55,6 +55,9 @@ struct MainTabView: View {
 
     var body: some View {
         TabView {
+            DashboardView()
+                .tabItem { Label("Home", systemImage: "house") }
+
             ServersListView()
                 .tabItem { Label("Servers", systemImage: "server.rack") }
 
