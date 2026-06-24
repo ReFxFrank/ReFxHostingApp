@@ -143,6 +143,33 @@ APNs-driven path can replace the poll later without touching feature code.
 
 ---
 
+## Passkey (WebAuthn) login
+
+After a password login that returns `methods: ["webauthn", …]`, the MFA screen
+offers **Sign in with passkey** (iOS `AuthenticationServices`): the app fetches
+`/auth/mfa/webauthn/login/options`, runs the system passkey sheet, and posts the
+assertion to `/auth/mfa/webauthn/login/verify`.
+
+Two infra prerequisites must be in place for the OS to allow it (these are NOT
+app code):
+
+1. **Associated Domains** — the app ships the entitlement
+   `webcredentials:refx.gg` (in `ReFxApp/Resources/ReFxApp.entitlements`). The
+   `rpId` the app uses comes from the server's options response, so the server's
+   `RP_ID` must be `refx.gg` (the registrable domain), and the entitlement domain
+   must match.
+2. **`apple-app-site-association`** served at
+   `https://refx.gg/.well-known/apple-app-site-association` (content-type
+   `application/json`, no redirect) including:
+   ```json
+   { "webcredentials": { "apps": ["<TEAMID>.com.refx.app"] } }
+   ```
+   Replace `<TEAMID>` with your 10-char Apple Team ID. **Backend TODO** if not
+   already hosted.
+
+Until both are live the passkey button appears but the OS rejects the assertion;
+TOTP/recovery still work.
+
 ## Backend TODOs (gaps flagged, not worked around)
 
 These need backend work for the corresponding app feature to be fully real-time

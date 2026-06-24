@@ -9,6 +9,8 @@ protocol AuthAPI: Sendable {
     func refresh(refreshToken: String) async throws -> TokenResponse
     func logout(refreshToken: String) async throws
     func me() async throws -> CurrentUser
+    func webauthnLoginOptions(mfaToken: String) async throws -> PasskeyOptions
+    func webauthnLoginVerify(mfaToken: String, response: WebAuthnAssertionResponse) async throws -> TokenResponse
 }
 
 /// Concrete `AuthAPI` over `APIClient`. All these routes are `@Public()` except
@@ -39,4 +41,21 @@ struct AuthService: AuthAPI {
     func me() async throws -> CurrentUser {
         try await client.send(.get("auth/me"))
     }
+
+    func webauthnLoginOptions(mfaToken: String) async throws -> PasskeyOptions {
+        try await client.send(.post("auth/mfa/webauthn/login/options",
+                                     body: MFATokenBody(mfaToken: mfaToken), authenticated: false))
+    }
+
+    func webauthnLoginVerify(mfaToken: String, response: WebAuthnAssertionResponse) async throws -> TokenResponse {
+        try await client.send(.post("auth/mfa/webauthn/login/verify",
+                                     body: WebAuthnLoginVerifyBody(mfaToken: mfaToken, response: response),
+                                     authenticated: false))
+    }
+}
+
+private struct MFATokenBody: Encodable { let mfaToken: String }
+private struct WebAuthnLoginVerifyBody: Encodable {
+    let mfaToken: String
+    let response: WebAuthnAssertionResponse
 }

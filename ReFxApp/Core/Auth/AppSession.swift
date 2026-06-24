@@ -98,6 +98,28 @@ final class AppSession: ObservableObject {
         await loadSignedInUser(applyLock: false)
     }
 
+    /// Passkey second factor: fetch options → run the system passkey sheet →
+    /// verify the assertion → finish sign-in.
+    func completePasskey(token: String) async throws {
+        let options = try await authStore.webauthnOptions(token: token)
+        guard let challenge = options.challengeData else {
+            throw APIError.decoding("Bad passkey challenge")
+        }
+        let authenticator = PasskeyAuthenticator()
+        let assertion = try await authenticator.assert(
+            rpId: options.rpId,
+            challenge: challenge,
+            allowedCredentialIDs: options.allowedCredentialIDs)
+        let response = WebAuthnAssertionResponse(
+            credentialID: assertion.credentialID,
+            clientDataJSON: assertion.clientDataJSON,
+            authenticatorData: assertion.authenticatorData,
+            signature: assertion.signature,
+            userID: assertion.userID)
+        try await authStore.verifyWebauthn(token: token, response: response)
+        await loadSignedInUser(applyLock: false)
+    }
+
     func logout() async {
         await authStore.logout()
         unreadCount = 0

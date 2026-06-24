@@ -59,6 +59,19 @@ struct MFAView: View {
                         code = ""
                     }
                     .font(.footnote)
+
+                    if methods.contains(.webauthn) {
+                        HStack { Rectangle().fill(Color.appBorder).frame(height: 1); Text("or").font(.caption).foregroundStyle(.appMuted); Rectangle().fill(Color.appBorder).frame(height: 1) }
+                            .padding(.vertical, 4)
+                        Button {
+                            Task { await signInWithPasskey() }
+                        } label: {
+                            Label("Sign in with passkey", systemImage: "person.badge.key.fill")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered).controlSize(.large).tint(.appPrimary)
+                        .disabled(isSubmitting)
+                    }
                 }
                 .padding(24)
                 .frame(maxWidth: 440)
@@ -68,6 +81,24 @@ struct MFAView: View {
                     Button("Cancel") { dismiss() }
                 }
             }
+        }
+    }
+
+    private func signInWithPasskey() async {
+        errorMessage = nil
+        isSubmitting = true
+        defer { isSubmitting = false }
+        do {
+            try await session.completePasskey(token: token)
+            dismiss()
+        } catch is CancellationError {
+            // user dismissed the sheet; no-op
+        } catch PasskeyAuthenticator.PasskeyError.cancelled {
+            // user cancelled the passkey sheet; no-op
+        } catch let error as APIError {
+            errorMessage = error.userMessage
+        } catch {
+            errorMessage = "Passkey sign-in failed. Try a code instead."
         }
     }
 

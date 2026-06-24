@@ -6,5 +6,9 @@
     <array>
         <string>group.com.refx.app</string>
     </array>
+    <key>com.apple.developer.associated-domains</key>
+    <array>
+        <string>webcredentials:refx.gg</string>
+    </array>
 </dict>
 </plist>

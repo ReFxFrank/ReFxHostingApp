@@ -63,6 +63,14 @@ actor MockAuthAPI: AuthAPI {
 
     func logout(refreshToken: String) async throws {}
 
+    func webauthnLoginOptions(mfaToken: String) async throws -> PasskeyOptions {
+        throw APIError.server(status: 501, message: "not implemented in mock")
+    }
+
+    func webauthnLoginVerify(mfaToken: String, response: WebAuthnAssertionResponse) async throws -> TokenResponse {
+        throw APIError.server(status: 501, message: "not implemented in mock")
+    }
+
     func me() async throws -> CurrentUser {
         CurrentUser(id: "u1", email: "user@example.com", firstName: "Test",
                     lastName: "User", globalRole: .customer, avatarUrl: nil,

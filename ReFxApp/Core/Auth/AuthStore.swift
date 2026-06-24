@@ -63,6 +63,17 @@ actor AuthStore {
         persist(response)
     }
 
+    // MARK: Passkey (WebAuthn) login
+
+    func webauthnOptions(token: String) async throws -> PasskeyOptions {
+        try await api.webauthnLoginOptions(mfaToken: token)
+    }
+
+    func verifyWebauthn(token: String, response: WebAuthnAssertionResponse) async throws {
+        let result = try await api.webauthnLoginVerify(mfaToken: token, response: response)
+        persist(result)
+    }
+
     // MARK: - Refresh (single-flight)
 
     /// Perform at most one refresh at a time. Returns true if a fresh, rotated
