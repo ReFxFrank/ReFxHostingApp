@@ -136,6 +136,12 @@ private struct ServerDetailContent: View {
         case .minecraft:
             NavigationLink { MinecraftView(serverId: model.serverId) } label: { label }
                 .buttonStyle(.plain)
+        case .mods:
+            NavigationLink { ModsView(serverId: model.serverId) } label: { label }
+                .buttonStyle(.plain)
+        case .voice:
+            NavigationLink { VoiceView(serverId: model.serverId) } label: { label }
+                .buttonStyle(.plain)
         default:
             if section.isWebLinkOut {
                 Button {
