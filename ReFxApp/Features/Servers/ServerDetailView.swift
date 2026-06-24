@@ -139,6 +139,9 @@ private struct ServerDetailContent: View {
         case .mods:
             NavigationLink { ModsView(serverId: model.serverId) } label: { label }
                 .buttonStyle(.plain)
+        case .modpacks:
+            NavigationLink { ModpacksView(serverId: model.serverId) } label: { label }
+                .buttonStyle(.plain)
         case .voice:
             NavigationLink { VoiceView(serverId: model.serverId) } label: { label }
                 .buttonStyle(.plain)

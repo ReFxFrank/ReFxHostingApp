@@ -37,6 +37,7 @@ final class AppSession: ObservableObject {
     private(set) lazy var workshop = WorkshopService(client: client)
     private(set) lazy var minecraft = MinecraftService(client: client)
     private(set) lazy var mods = ModsService(client: client)
+    private(set) lazy var modpacks = ModpacksService(client: client)
     private(set) lazy var voice = VoiceService(client: client)
     private(set) lazy var staff = StaffService(client: client)
 
