@@ -115,6 +115,9 @@ private struct ServerDetailContent: View {
         case .files:
             NavigationLink { FilesBrowserView(serverId: model.serverId) } label: { label }
                 .buttonStyle(.plain)
+        case .backups:
+            NavigationLink { BackupsView(serverId: model.serverId) } label: { label }
+                .buttonStyle(.plain)
         default:
             if section.isWebLinkOut {
                 Button {
