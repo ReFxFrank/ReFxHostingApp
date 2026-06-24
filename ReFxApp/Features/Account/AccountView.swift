@@ -20,6 +20,11 @@ struct AccountView: View {
                             .badge(session.unreadCount)
                     }
                     NavigationLink {
+                        SecurityView()
+                    } label: {
+                        Label("Security (2FA, API keys)", systemImage: "lock.shield")
+                    }
+                    NavigationLink {
                         SessionsView()
                     } label: {
                         Label("Active sessions", systemImage: "desktopcomputer")

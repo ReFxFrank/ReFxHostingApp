@@ -32,6 +32,9 @@ struct CurrentUser: Codable, Identifiable, Equatable {
     let avatarUrl: String?
     let creditBalanceMinor: Int?
     let permissions: [String]?
+    let totpEnabledAt: Date?
+
+    var isTotpEnabled: Bool { totpEnabledAt != nil }
 
     var displayName: String {
         let name = [firstName, lastName].compactMap { $0 }.joined(separator: " ")

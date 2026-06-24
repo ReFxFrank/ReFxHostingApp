@@ -135,6 +135,14 @@ final class AppSession: ObservableObject {
         phase = .signedOut
     }
 
+    /// Re-fetch `/auth/me` (e.g. after enabling/disabling TOTP) and update state.
+    func reloadUser() async {
+        guard currentUser != nil else { return }
+        if let user = try? await authStore.fetchCurrentUser() {
+            phase = .signedIn(user)
+        }
+    }
+
     func refreshUnreadCount() async {
         guard currentUser != nil else { return }
         if let count = try? await account.unreadCount() {

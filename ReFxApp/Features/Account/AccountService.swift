@@ -50,6 +50,38 @@ struct AccountService {
         let currentPassword: String
         let newPassword: String
     }
+
+    // MARK: Two-factor (TOTP)
+
+    func totpEnroll() async throws -> TotpEnrollment {
+        try await client.send(.post("auth/mfa/totp/enroll"))
+    }
+
+    func totpVerify(code: String) async throws -> RecoveryCodes {
+        try await client.send(.post("auth/mfa/totp/verify", body: TotpCodeBody(code: code)))
+    }
+
+    func totpDisable() async throws {
+        try await client.sendVoid(.delete("auth/mfa/totp"))
+    }
+
+    // MARK: API keys
+
+    func apiKeys() async throws -> [ApiKey] {
+        try await client.send(.get("account/api-keys"))
+    }
+
+    func createApiKey(name: String, scopes: [String]) async throws -> CreatedApiKey {
+        try await client.send(.post("account/api-keys",
+                                     body: CreateApiKeyBody(name: name, scopes: scopes)))
+    }
+
+    func revokeApiKey(_ id: String) async throws {
+        try await client.sendVoid(.delete("account/api-keys/\(id)"))
+    }
+
+    private struct TotpCodeBody: Encodable { let code: String }
+    private struct CreateApiKeyBody: Encodable { let name: String; let scopes: [String] }
 }
 
 /// `GET /account/sessions` → `{ id, ip, userAgent, createdAt, expiresAt }`
