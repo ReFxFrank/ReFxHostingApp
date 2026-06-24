@@ -90,6 +90,8 @@ struct TicketRow: View {
         .padding(Theme.cardPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
         .cardSurface()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Ticket \(ticket.number), \(ticket.subject), \(ticket.state.label)")
     }
 }
 

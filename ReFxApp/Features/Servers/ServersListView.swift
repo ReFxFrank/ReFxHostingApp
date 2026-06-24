@@ -140,5 +140,8 @@ struct ServerRow: View {
                     .clipShape(RoundedRectangle(cornerRadius: 2))
             }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(server.name), \(server.gameName), \(server.state.label)\(server.connectionString.map { ", \($0)" } ?? "")")
+        .accessibilityHint("Opens server details")
     }
 }
