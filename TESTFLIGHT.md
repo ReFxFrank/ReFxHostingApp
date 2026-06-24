@@ -58,7 +58,53 @@ already prepped: app icon, version/build, and export-compliance flag are set.
 - The first TestFlight build asks for an **export-compliance** answer; we already
   set `ITSAppUsesNonExemptEncryption = false` (standard HTTPS only), so it won't
   prompt you each time.
-- The CI workflow builds + tests every push, but it does **not** upload to
-  TestFlight — that needs your App Store Connect API key as a secret. The manual
-  Archive ▸ Upload above is the simplest path for now; automated TestFlight
-  delivery from CI can be added later if you want it.
+- The `iOS Build & Test` CI workflow builds + tests every push but does not
+  upload. Automated TestFlight delivery is the separate `TestFlight Upload`
+  workflow below.
+
+---
+
+## Automated TestFlight uploads (CI)
+
+The **`TestFlight Upload`** GitHub Actions workflow archives, signs (in CI, via
+an App Store Connect API key — no cert/profile export needed), and uploads to
+TestFlight. You trigger it manually from the **Actions** tab, so builds are
+intentional.
+
+### One-time setup
+
+1. **Active Apple Developer Program membership** (the $99 enrollment above).
+2. **Create the app record** in App Store Connect ▸ Apps ▸ **+** ▸ New App,
+   bundle id **`com.refx.app`** (must match). A build can't upload to a
+   non-existent app.
+3. **Generate an App Store Connect API key**: App Store Connect ▸ **Users and
+   Access** ▸ **Integrations** (Keys) ▸ App Store Connect API ▸ **+**.
+   - Access role: **App Manager** (or Admin).
+   - Download the **`.p8`** file (you only get it once) and note the **Key ID**
+     and **Issuer ID**.
+4. **Find your Team ID**: developer.apple.com ▸ Membership ▸ Team ID (10 chars).
+5. **Add repo secrets** (GitHub ▸ Settings ▸ Secrets and variables ▸ Actions ▸
+   New repository secret):
+
+   | Secret | Value |
+   |---|---|
+   | `ASC_KEY_ID` | the API Key ID |
+   | `ASC_ISSUER_ID` | the API key Issuer ID (UUID) |
+   | `ASC_KEY_P8_BASE64` | the `.p8` file, base64-encoded |
+   | `APPLE_TEAM_ID` | your 10-char Team ID |
+
+   To base64 the key (on the Mac or any terminal):
+   ```bash
+   base64 -i AuthKey_XXXXXXXX.p8 | pbcopy   # paste as ASC_KEY_P8_BASE64
+   ```
+
+### Running it
+
+- **Actions** tab ▸ **TestFlight Upload** ▸ **Run workflow**. Optionally set a
+  build number (defaults to the run number; each upload must be unique).
+- ~10–15 min later the build appears in App Store Connect ▸ TestFlight as
+  "Processing", then "Ready to Test". Add testers as above.
+
+The first run also registers the bundle id / provisioning automatically
+(`-allowProvisioningUpdates`). If it fails with "no app", create the app record
+(step 2) and re-run.
