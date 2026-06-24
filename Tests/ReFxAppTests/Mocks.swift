@@ -66,7 +66,7 @@ actor MockAuthAPI: AuthAPI {
     func me() async throws -> CurrentUser {
         CurrentUser(id: "u1", email: "user@example.com", firstName: "Test",
                     lastName: "User", globalRole: .customer, avatarUrl: nil,
-                    creditBalanceMinor: 0, permissions: [])
+                    creditBalanceMinor: 0, permissions: [], totpEnabledAt: nil)
     }
 
     private func token(prefix: String) -> TokenResponse {

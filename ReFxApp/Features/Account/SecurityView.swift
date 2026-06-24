@@ -143,7 +143,7 @@ struct TotpEnrollView: View {
     @State private var enrollment: TotpEnrollment?
     @State private var code = ""
     @State private var recoveryCodes: [String]?
-    @State private var error: String?
+    @State private var errorText: String?
     @State private var isBusy = false
 
     var body: some View {
@@ -173,7 +173,7 @@ struct TotpEnrollView: View {
                         Text("2. Enter the 6-digit code")
                     }
                     .listRowBackground(Color.appCard)
-                    if let error { Text(error).foregroundStyle(.appDestructive).font(.footnote) }
+                    if let errorText { Text(errorText).foregroundStyle(.appDestructive).font(.footnote) }
                 } else {
                     ProgressView().tint(.appPrimary)
                 }
@@ -200,14 +200,14 @@ struct TotpEnrollView: View {
     }
 
     private func verify() async {
-        error = nil; isBusy = true
+        errorText = nil; isBusy = true
         defer { isBusy = false }
         do {
             let result = try await session.account.totpVerify(code: code)
             recoveryCodes = result.recoveryCodes
             await onEnabled()
-        } catch let e as APIError { error = e.userMessage }
-        catch { error = "Invalid code. Try again." }
+        } catch let e as APIError { errorText = e.userMessage }
+        catch { errorText = "Invalid code. Try again." }
     }
 }
 

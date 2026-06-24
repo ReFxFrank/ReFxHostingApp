@@ -13,28 +13,42 @@ paying invoices and signup stay on the web.
 
 ## Status
 
-**Phase 1 (MVP) — implemented.**
+The app mirrors the **web client area** (the `(dashboard)` route group). Auth,
+networking, realtime and most management surfaces are native; a few heavy/niche
+sections link out to the web.
 
-- Configurable API/Web base URLs (build-time `.xcconfig` default + runtime override).
-- Auth: email + password, **TOTP / recovery-code MFA**, logout, Keychain token
-  storage, **single-flight auto-refresh** on 401 (refresh rotation-safe).
-- Optional **Face ID app-lock**.
-- **Servers home**: live state pills, key resource, loud treatment of
-  down/suspended/crashed servers, pull-to-refresh, pagination, search.
-- **Server detail**: permission-aware **power controls** (start/restart/stop/kill,
-  destructive ones confirmed, debounced, optimistic state reconciled with socket
-  truth), **live console** (Socket.IO stream + command input, reconnect, capped
-  buffer, scroll-lock), **live monitor** (CPU/RAM/disk gauges, players/uptime,
-  IP:port copy chip).
-- **Account**: profile, change password, sessions list + revoke, notifications +
-  unread badge.
-- **Awareness**: `BGAppRefreshTask` + local notifications on server outage /
-  ticket activity (best-effort; see *Awareness* below).
+**Foundation**
+- Configurable API/Web base URLs (build-time `.xcconfig` default + runtime override; defaults to the live `api.refx.gg`).
+- Auth: email + password, **TOTP / recovery-code MFA**, logout, Keychain tokens, **single-flight auto-refresh** on 401 (rotation-safe). Optional **Face ID app-lock**.
+- **Awareness**: `BGAppRefreshTask` + local notifications on outage / ticket activity (best-effort).
 - Unit tests for the auth/refresh state machine and cents formatting.
 
-Phase 2 (files, backups, reinstall/game-switch, sub-users, schedules, widget,
-TOTP enroll, API keys) and Phase 3 (staff queue, server/node/user admin, Live
-Activity, passkey login) are scaffolded as stubs where surfaced in the tab tree.
+**Home / Servers**
+- **Home dashboard**: greeting, payment-required banner, active platform alerts, allocated-resource cards, quick server list.
+- **Servers home**: live state pills, attention-first ordering, search, pagination, pull-to-refresh.
+- **Server screen**: overview (power controls, live CPU/RAM/disk gauges, IP:port copy) + a **section menu mirroring the web sidebar**, with the same conditional visibility per game type.
+
+**Server sections (native)**
+- **Console** (live Socket.IO stream + commands, reconnect, scroll-lock, persistent buffer)
+- **Files** (browse, view/edit configs, mkdir/rename/delete, download; large/binary gated)
+- **Backups** (list, create, restore, download, delete; live progress)
+- **Schedules** (list, toggle, run, delete, create)
+- **Databases** (list, create, rotate password, delete)
+- **Settings** (startup command, environment variables, reinstall) + **Sub-users** (invite, grouped permission editor, edit, remove)
+- **Switch Game** (templates + keep-data/clean switch)
+- **Minecraft** (loader + version) and **Workshop** (add/toggle/remove/apply)
+
+**Support & Account**
+- **Support**: ticket list, thread with chat-style bubbles, reply, create.
+- **Account**: profile, change password, sessions, notifications, and **Security** (TOTP enroll/disable, API keys).
+
+**Link-outs (by design)**
+- **Upgrade / billing / checkout** → web (App Store policy; Decision #2).
+- **Mods, Modpacks, Voice** → web (heavy Modrinth-marketplace / TeamSpeak-admin flows).
+
+**Not yet built**: Staff section (support queue, server/node/user admin) is a
+role-gated stub; Home Screen widget, Live Activity and passkey login are future
+work.
 
 ---
 
