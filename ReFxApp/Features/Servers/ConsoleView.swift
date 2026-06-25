@@ -7,6 +7,7 @@ struct ConsoleView: View {
     @ObservedObject var socket: ConsoleSocket
     @State private var command = ""
     @State private var scrollLocked = false
+    @FocusState private var inputFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -20,23 +21,40 @@ struct ConsoleView: View {
 
     private var commandBar: some View {
         HStack(spacing: 10) {
-            Image(systemName: "chevron.right").foregroundStyle(.appMuted).font(.caption)
+            Text(">")
+                .font(.callout.weight(.bold).monospaced())
+                .foregroundStyle(.appPrimary)
+                .shadow(color: .appPrimary.opacity(0.6), radius: 4)
             TextField("Type a command…", text: $command)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .font(.callout.monospaced())
                 .foregroundStyle(.appForeground)
+                .tint(.appPrimary)
+                .focused($inputFocused)
                 .submitLabel(.send)
                 .onSubmit(send)
             Button(action: send) {
                 Image(systemName: "paperplane.fill")
+                    .font(.callout)
+                    .foregroundStyle(canSend ? .white : .appMuted)
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(canSend ? AnyShapeStyle(Theme.primaryGradient)
+                                                       : AnyShapeStyle(Color.appCard)))
+                    .overlay(Circle().strokeBorder(Color.appBorder, lineWidth: canSend ? 0 : 1))
+                    .shadow(color: canSend ? .appPrimary.opacity(0.5) : .clear, radius: 8)
             }
-            .disabled(command.isEmpty || socket.connectionState != .connected)
-            .foregroundStyle(command.isEmpty ? .appMuted : .appPrimary)
+            .disabled(!canSend)
         }
-        .padding(12)
-        .background(Color.appCard)
-        .overlay(Rectangle().fill(Color.appBorder).frame(height: 1), alignment: .top)
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .background(Color.appPopover)
+        .overlay(LinearGradient(colors: [.appPrimary.opacity(0.25), .appBorder],
+                                startPoint: .leading, endPoint: .trailing)
+            .frame(height: 1), alignment: .top)
+    }
+
+    private var canSend: Bool {
+        !command.trimmingCharacters(in: .whitespaces).isEmpty && socket.connectionState == .connected
     }
 
     private func send() {
@@ -51,16 +69,18 @@ struct ReconnectingBanner: View {
     var body: some View {
         HStack(spacing: 8) {
             ProgressView().controlSize(.mini).tint(.appWarning)
-            Text("Reconnecting to live console…").font(.caption)
+            Text("Reconnecting to live console…").font(.caption.weight(.medium))
             Spacer()
         }
         .foregroundStyle(.appWarning)
         .padding(.horizontal, 14).padding(.vertical, 8)
         .background(Color.appWarning.opacity(0.12))
+        .overlay(Rectangle().fill(Color.appWarning.opacity(0.3)).frame(height: 1), alignment: .bottom)
     }
 }
 
-/// Monospace terminal: autoscroll with scroll-lock, copyable text.
+/// Monospace terminal: autoscroll with scroll-lock, copyable text. Kept flat
+/// (no glass/blur per line) so streaming stays smooth on older iPhones.
 struct TerminalView: View {
     let lines: [ConsoleSocket.ConsoleLine]
     @Binding var scrollLocked: Bool
@@ -81,7 +101,9 @@ struct TerminalView: View {
                 }
                 .padding(12)
             }
-            .background(Color.black.opacity(0.35))
+            .background(
+                LinearGradient(colors: [Color(hex: "060a12"), Color(hex: "04070d")],
+                               startPoint: .top, endPoint: .bottom))
             .overlay(alignment: .bottomTrailing) {
                 if scrollLocked {
                     Button {
@@ -89,13 +111,14 @@ struct TerminalView: View {
                         scrollToBottom(proxy)
                     } label: {
                         Label("Jump to live", systemImage: "arrow.down.to.line")
-                            .font(.caption2.weight(.semibold))
-                            .padding(.horizontal, 10).padding(.vertical, 6)
-                            .background(Color.appPrimary)
+                            .font(.caption2.weight(.bold))
+                            .padding(.horizontal, 12).padding(.vertical, 7)
+                            .background(Capsule().fill(Theme.primaryGradient))
                             .foregroundStyle(.white)
-                            .clipShape(Capsule())
+                            .overlay(Capsule().strokeBorder(Color.white.opacity(0.2), lineWidth: 1))
+                            .shadow(color: .appPrimary.opacity(0.5), radius: 8)
                     }
-                    .padding(12)
+                    .padding(14)
                 }
             }
             .onChange(of: lines.count) { _ in
@@ -117,7 +140,7 @@ struct TerminalView: View {
     }
 
     private func color(for line: ConsoleSocket.ConsoleLine) -> Color {
-        if line.stream == "input" { return .appPrimary }
+        if line.stream == "input" { return .appAccentText }
         return line.isError ? .appDestructive : .appForeground
     }
 }

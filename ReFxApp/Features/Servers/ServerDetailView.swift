@@ -70,22 +70,24 @@ private struct ServerDetailContent: View {
     }
 
     private var header: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(model.server?.gameName ?? "—")
-                    .font(.subheadline).foregroundStyle(.appMuted)
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 8) {
+                Eyebrow(model.server?.gameName ?? "—", systemImage: "gamecontroller")
                 StatePill(state: state)
             }
             Spacer()
             ConnectionIndicator(state: socket.connectionState)
         }
+        .padding(Theme.cardPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardSurface()
     }
 
     @ViewBuilder
     private var sectionMenu: some View {
         if let server = model.server {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Manage").font(.caption.weight(.semibold)).foregroundStyle(.appMuted)
+            VStack(alignment: .leading, spacing: 10) {
+                Eyebrow("Manage", systemImage: "square.grid.2x2")
                     .padding(.leading, 4)
                 VStack(spacing: 10) {
                     if server.state == .pendingPayment {
