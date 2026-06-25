@@ -61,7 +61,7 @@ struct AccountView: View {
                 .listRowBackground(Color.appCard)
             }
             .scrollContentBackground(.hidden)
-            .background(Color.appBackground)
+            .screenBackground()
             .navigationTitle("Account")
         }
     }
@@ -73,11 +73,14 @@ struct ProfileHeader: View {
     var body: some View {
         HStack(spacing: 14) {
             ZStack {
-                Circle().fill(Color.appPrimary.opacity(0.18)).frame(width: 52, height: 52)
+                Circle().fill(Color.appPrimary.opacity(0.18))
+                Circle().strokeBorder(Color.appPrimary.opacity(0.45), lineWidth: 1)
                 Text(user.initials).font(.headline).foregroundStyle(.appPrimary)
             }
-            VStack(alignment: .leading, spacing: 3) {
-                Text(user.displayName).font(.headline).foregroundStyle(.appForeground)
+            .frame(width: 54, height: 54)
+            .shadow(color: .appPrimary.opacity(0.35), radius: 8)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(user.displayName).font(.headline).foregroundStyle(.appForegroundStrong)
                 Text(user.email).font(.caption).foregroundStyle(.appMuted)
                 RoleBadge(role: user.globalRole)
             }
@@ -90,11 +93,12 @@ struct ProfileHeader: View {
 struct RoleBadge: View {
     let role: UserRole
     var body: some View {
-        Text(role.rawValue.capitalized)
-            .font(.caption2.weight(.bold))
-            .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Color.appAccent)
-            .foregroundStyle(.appForeground)
+        Text(role.rawValue.uppercased())
+            .font(.caption2.weight(.bold)).tracking(0.8)
+            .padding(.horizontal, 9).padding(.vertical, 3)
+            .background(Color.appPrimary.opacity(0.14))
+            .overlay(Capsule().strokeBorder(Color.appPrimary.opacity(0.35), lineWidth: 1))
+            .foregroundStyle(.appAccentText)
             .clipShape(Capsule())
     }
 }
