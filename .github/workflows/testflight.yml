@@ -122,12 +122,14 @@ jobs:
           echo "Signing identities:"
           security find-identity -v -p codesigning "$KCH"
 
-          PROFILE="ci/ReFx_AppStore.mobileprovision"
-          security cms -D -i "$PROFILE" > "$RUNNER_TEMP/pp.plist"
-          UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$RUNNER_TEMP/pp.plist")
           mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
-          cp "$PROFILE" "$HOME/Library/MobileDevice/Provisioning Profiles/$UUID.mobileprovision"
-          echo "Installed profile $UUID"
+          for PROFILE in ci/*.mobileprovision; do
+            security cms -D -i "$PROFILE" > "$RUNNER_TEMP/pp.plist"
+            UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$RUNNER_TEMP/pp.plist")
+            NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' "$RUNNER_TEMP/pp.plist")
+            cp "$PROFILE" "$HOME/Library/MobileDevice/Provisioning Profiles/$UUID.mobileprovision"
+            echo "Installed profile '$NAME' ($UUID)"
+          done
           rm -f "$RUNNER_TEMP/dist.p12"
 
       - name: Resolve build number
