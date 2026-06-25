@@ -66,7 +66,15 @@ final class AppConfig: ObservableObject {
 
     private static func resolve(override: String?, schemeKey: String,
                                 hostKey: String, fallback: String) -> URL {
+        // Honor a persisted origin override in DEBUG only. There is no in-app UI
+        // to set it in release, so reading it in production would only serve as a
+        // redirect vector: anyone able to write the app's sandboxed UserDefaults
+        // (jailbreak / manipulated backup restore) could point all token-bearing
+        // API + socket traffic at an attacker host. Release always uses the
+        // baked-in Info.plist origin (or the hardcoded fallback).
+        #if DEBUG
         if let override, let url = normalize(override) { return url }
+        #endif
         let info = Bundle.main.infoDictionary
         let scheme = (info?[schemeKey] as? String)?.trimmed ?? "https"
         let host = (info?[hostKey] as? String)?.trimmed ?? ""
