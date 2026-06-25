@@ -58,6 +58,7 @@ struct ReFxAppApp: App {
         let label = UIColor(Color.appLabel)
         let hairline = UIColor(Color.appBorder)
 
+        // Scrolled state: glassy navy blur so content stays legible behind the bar.
         let nav = UINavigationBarAppearance()
         nav.configureWithDefaultBackground()
         nav.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterialDark)
@@ -65,8 +66,18 @@ struct ReFxAppApp: App {
         nav.shadowColor = hairline
         nav.titleTextAttributes = [.foregroundColor: foreground]
         nav.largeTitleTextAttributes = [.foregroundColor: foreground]
+
+        // At the top (scroll edge): fully transparent so the bar dissolves into the
+        // screen gradient — no off-colour block or hairline seam under the title.
+        let navTop = UINavigationBarAppearance()
+        navTop.configureWithTransparentBackground()
+        navTop.backgroundColor = .clear
+        navTop.shadowColor = .clear
+        navTop.titleTextAttributes = [.foregroundColor: foreground]
+        navTop.largeTitleTextAttributes = [.foregroundColor: foreground]
+
         UINavigationBar.appearance().standardAppearance = nav
-        UINavigationBar.appearance().scrollEdgeAppearance = nav
+        UINavigationBar.appearance().scrollEdgeAppearance = navTop
         UINavigationBar.appearance().compactAppearance = nav
 
         let tab = UITabBarAppearance()
