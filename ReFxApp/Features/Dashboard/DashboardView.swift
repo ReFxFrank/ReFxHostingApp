@@ -25,8 +25,8 @@ final class DashboardViewModel: ObservableObject {
 /// cards, and a quick list of your servers.
 struct DashboardView: View {
     @EnvironmentObject private var session: AppSession
-    @EnvironmentObject private var config: AppConfig
     @StateObject private var model = DashboardViewModel()
+    @State private var showBilling = false
 
     var body: some View {
         NavigationStack {
@@ -41,6 +41,7 @@ struct DashboardView: View {
             }
             .screenBackground()
             .navigationTitle(greeting)
+            .navigationDestination(isPresented: $showBilling) { BillingView() }
             .refreshable { await model.refresh() }
         }
         .task {
@@ -71,7 +72,7 @@ struct DashboardView: View {
         return VStack(spacing: 16) {
             if summary.billing.openInvoices > 0 || pending > 0 {
                 PaymentBanner(openInvoices: summary.billing.openInvoices, pending: pending) {
-                    WebLink.open(config.webOrigin, path: "billing")
+                    showBilling = true
                 }
             }
 

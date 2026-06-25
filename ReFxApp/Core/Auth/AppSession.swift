@@ -41,6 +41,7 @@ final class AppSession: ObservableObject {
     private(set) lazy var voice = VoiceService(client: client)
     private(set) lazy var staff = StaffService(client: client)
     private(set) lazy var catalog = CatalogService(client: client)
+    private(set) lazy var billing = BillingService(client: client)
 
     private var didWireClient = false
 

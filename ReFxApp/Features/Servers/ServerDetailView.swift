@@ -91,8 +91,8 @@ private struct ServerDetailContent: View {
                     .padding(.leading, 4)
                 VStack(spacing: 10) {
                     if server.state == .pendingPayment {
-                        Button {
-                            WebLink.open(config.webOrigin, path: "billing")
+                        NavigationLink {
+                            BillingView()
                         } label: {
                             ManageRow(icon: "creditcard", title: "Pay now",
                                       subtitle: "Activate this server", accent: .appWarning)
