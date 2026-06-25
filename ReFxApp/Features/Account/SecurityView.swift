@@ -108,7 +108,7 @@ struct SecurityView: View {
             }
             .listRowBackground(Color.appCard)
         }
-        .scrollContentBackground(.hidden).background(Color.appBackground)
+        .scrollContentBackground(.hidden).screenBackground()
         .navigationTitle("Security")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showEnroll) {
@@ -178,7 +178,7 @@ struct TotpEnrollView: View {
                     ProgressView().tint(.appPrimary)
                 }
             }
-            .scrollContentBackground(.hidden).background(Color.appBackground)
+            .scrollContentBackground(.hidden).screenBackground()
             .navigationTitle("Two-factor").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -232,7 +232,7 @@ struct CreateApiKeyView: View {
                     }
                 }
             }
-            .scrollContentBackground(.hidden).background(Color.appBackground)
+            .scrollContentBackground(.hidden).screenBackground()
             .navigationTitle("New API key").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }

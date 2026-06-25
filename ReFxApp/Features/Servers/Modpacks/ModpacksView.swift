@@ -129,7 +129,7 @@ struct ModpacksView: View {
                 }
                 Spacer()
                 Button("Remove", role: .destructive) { Task { await model.uninstall() } }
-                    .buttonStyle(.bordered).controlSize(.small).tint(.appDestructive)
+                    .buttonStyle(.refxDestructive(fullWidth: false))
             }
         }
         .padding(Theme.cardPadding).frame(maxWidth: .infinity, alignment: .leading).cardSurface()
@@ -168,7 +168,7 @@ struct VersionPicker: View {
                             .listRowBackground(Color.appCard)
                         }
                     }
-                    .listStyle(.plain).scrollContentBackground(.hidden).background(Color.appBackground)
+                    .listStyle(.plain).scrollContentBackground(.hidden).screenBackground()
                 }
             }
             .screenBackground()

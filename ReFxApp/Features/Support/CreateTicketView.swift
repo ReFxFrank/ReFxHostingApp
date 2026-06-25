@@ -36,7 +36,7 @@ struct CreateTicketView: View {
                     Text(errorMessage).foregroundStyle(.appDestructive).font(.footnote)
                 }
             }
-            .scrollContentBackground(.hidden).background(Color.appBackground)
+            .scrollContentBackground(.hidden).screenBackground()
             .navigationTitle("New ticket").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }

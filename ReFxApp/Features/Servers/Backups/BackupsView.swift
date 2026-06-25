@@ -177,7 +177,7 @@ struct BackupsView: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
-        .background(Color.appBackground)
+        .screenBackground()
         .refreshable { await model.refresh() }
     }
 }

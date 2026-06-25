@@ -100,7 +100,7 @@ struct UserAdminView: View {
                 }
             }
         }
-        .listStyle(.plain).scrollContentBackground(.hidden).background(Color.appBackground)
+        .listStyle(.plain).scrollContentBackground(.hidden).screenBackground()
         .refreshable { await model.load() }
     }
 }

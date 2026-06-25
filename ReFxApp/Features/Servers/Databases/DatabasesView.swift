@@ -112,7 +112,7 @@ struct DatabasesView: View {
                     }
             }
         }
-        .listStyle(.plain).scrollContentBackground(.hidden).background(Color.appBackground)
+        .listStyle(.plain).scrollContentBackground(.hidden).screenBackground()
         .refreshable { await model.load() }
     }
 }
@@ -157,7 +157,7 @@ struct CreateDatabaseSheet: View {
                     Text("Use \"%\" to allow any host, or a CIDR like 10.0.0.0/8.")
                 }
             }
-            .scrollContentBackground(.hidden).background(Color.appBackground)
+            .scrollContentBackground(.hidden).screenBackground()
             .navigationTitle("New database").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }

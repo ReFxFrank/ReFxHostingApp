@@ -118,7 +118,7 @@ struct ServerSettingsView: View {
             dangerSection
         }
         .scrollContentBackground(.hidden)
-        .background(Color.appBackground)
+        .screenBackground()
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Edit variable", isPresented: Binding(

@@ -52,18 +52,23 @@ struct ErrorStateView: View {
     let retry: () -> Void
 
     var body: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.largeTitle)
+        VStack(spacing: 16) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 32, weight: .semibold))
                 .foregroundStyle(Color.appWarning)
+                .frame(width: 78, height: 78)
+                .cardSurface(elevated: true)
             Text(error.userMessage)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Color.appMuted)
-            Button("Try again", action: retry)
-                .buttonStyle(.borderedProminent)
-                .tint(Color.appPrimary)
+            Button {
+                retry()
+            } label: {
+                Label("Try again", systemImage: "arrow.clockwise")
+            }
+            .buttonStyle(.refxPrimary(fullWidth: false))
         }
-        .padding()
+        .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
@@ -73,17 +78,19 @@ struct EmptyStateView: View {
     var message: String = ""
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 12) {
             Image(systemName: "tray")
-                .font(.largeTitle)
-                .foregroundStyle(Color.appMuted)
+                .font(.system(size: 30, weight: .semibold))
+                .foregroundStyle(Color.appLabel)
+                .frame(width: 78, height: 78)
+                .cardSurface(elevated: true)
             Text(title).font(.headline).foregroundStyle(Color.appForeground)
             if !message.isEmpty {
                 Text(message).font(.subheadline).foregroundStyle(Color.appMuted)
                     .multilineTextAlignment(.center)
             }
         }
-        .padding()
+        .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

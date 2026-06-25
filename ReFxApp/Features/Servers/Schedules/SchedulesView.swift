@@ -99,7 +99,7 @@ struct SchedulesView: View {
                     }
             }
         }
-        .listStyle(.plain).scrollContentBackground(.hidden).background(Color.appBackground)
+        .listStyle(.plain).scrollContentBackground(.hidden).screenBackground()
         .refreshable { await model.load() }
     }
 }
@@ -160,7 +160,7 @@ struct CreateScheduleSheet: View {
                     Text(payloadHint)
                 }
             }
-            .scrollContentBackground(.hidden).background(Color.appBackground)
+            .scrollContentBackground(.hidden).screenBackground()
             .navigationTitle("New schedule").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }

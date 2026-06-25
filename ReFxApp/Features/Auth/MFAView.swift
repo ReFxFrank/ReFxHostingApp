@@ -51,7 +51,7 @@ struct MFAView: View {
                             Text("Verify")
                         }.frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent).controlSize(.large).tint(.appPrimary)
+                    .buttonStyle(.refxPrimary)
                     .disabled(isSubmitting || code.isEmpty)
 
                     Button(useRecovery ? "Use authenticator code" : "Use a recovery code instead") {
@@ -69,7 +69,7 @@ struct MFAView: View {
                             Label("Sign in with passkey", systemImage: "person.badge.key.fill")
                                 .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.bordered).controlSize(.large).tint(.appPrimary)
+                        .buttonStyle(.refxSecondary)
                         .disabled(isSubmitting)
                     }
                 }

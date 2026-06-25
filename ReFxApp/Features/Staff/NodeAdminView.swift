@@ -115,9 +115,9 @@ struct NodeCard: View {
             }
             HStack(spacing: 10) {
                 Button(action: onPing) { Label("Ping", systemImage: "wave.3.right") }
-                    .buttonStyle(.bordered).controlSize(.small).tint(.appPrimary)
+                    .buttonStyle(.refxSecondary(fullWidth: false))
                 Button(action: onRestart) { Label("Restart agent", systemImage: "arrow.clockwise") }
-                    .buttonStyle(.bordered).controlSize(.small).tint(.appWarning)
+                    .buttonStyle(.refxSecondary(fullWidth: false))
                 Spacer()
                 if busy { ProgressView().controlSize(.small) }
             }

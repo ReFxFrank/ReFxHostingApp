@@ -67,9 +67,8 @@ struct VoiceView: View {
                     if let info = model.info, !info.licenseAccepted {
                         Button { Task { await model.acceptLicense() } } label: {
                             Label("Accept TeamSpeak license", systemImage: "checkmark.seal")
-                                .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.borderedProminent).controlSize(.large).tint(.appPrimary)
+                        .buttonStyle(.refxPrimary)
                     }
                 }
             }

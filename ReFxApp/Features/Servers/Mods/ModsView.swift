@@ -139,7 +139,7 @@ struct ModsView: View {
                         }
                     }
                 }
-                .listStyle(.plain).scrollContentBackground(.hidden).background(Color.appBackground)
+                .listStyle(.plain).scrollContentBackground(.hidden).screenBackground()
                 .refreshable { await model.loadInstalled() }
             }
         }
@@ -171,7 +171,7 @@ struct ModResultRow: View {
                 if installing { ProgressView().controlSize(.small) }
                 else { Text("Install").font(.caption.weight(.semibold)) }
             }
-            .buttonStyle(.borderedProminent).controlSize(.small).tint(.appPrimary)
+            .buttonStyle(.refxPrimary(fullWidth: false))
             .disabled(installing)
         }
         .padding(Theme.cardPadding)

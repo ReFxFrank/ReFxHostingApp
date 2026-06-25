@@ -111,7 +111,7 @@ struct FileEditorView: View {
                         .foregroundStyle(.appWarning)
                     Text(message).foregroundStyle(.appMuted).multilineTextAlignment(.center)
                     Button("Try again") { Task { await model.load() } }
-                        .buttonStyle(.borderedProminent).tint(.appPrimary)
+                        .buttonStyle(.refxPrimary(fullWidth: false))
                 }
                 .padding()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -176,7 +176,7 @@ struct FileEditorView: View {
             } label: {
                 Label("Download", systemImage: "arrow.down.circle")
             }
-            .buttonStyle(.borderedProminent).tint(.appPrimary)
+            .buttonStyle(.refxPrimary(fullWidth: false))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

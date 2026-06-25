@@ -36,7 +36,7 @@ struct ChangePasswordView: View {
             }
         }
         .scrollContentBackground(.hidden)
-        .background(Color.appBackground)
+        .screenBackground()
         .navigationTitle("Change password")
     }
 

@@ -110,7 +110,7 @@ struct WorkshopView: View {
                 }
             }
         }
-        .listStyle(.plain).scrollContentBackground(.hidden).background(Color.appBackground)
+        .listStyle(.plain).scrollContentBackground(.hidden).screenBackground()
         .refreshable { await model.load() }
     }
 
@@ -121,7 +121,7 @@ struct WorkshopView: View {
                 Text(model.isApplying ? "Applying…" : "Apply changes (reinstall)")
             }.frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent).tint(.appPrimary).controlSize(.large)
+        .buttonStyle(.refxPrimary)
         .disabled(model.isApplying)
         .padding(12)
         .background(.ultraThinMaterial)
@@ -174,7 +174,7 @@ struct MinecraftView: View {
             }
             .listRowBackground(Color.appCard)
         }
-        .scrollContentBackground(.hidden).background(Color.appBackground)
+        .scrollContentBackground(.hidden).screenBackground()
         .navigationTitle("Minecraft").navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("Apply and reinstall?", isPresented: $confirm, titleVisibility: .visible) {
             Button("Apply & reinstall", role: .destructive) { Task { await save() } }

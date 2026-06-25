@@ -106,7 +106,7 @@ struct SubUsersView: View {
                 }
             }
         }
-        .listStyle(.plain).scrollContentBackground(.hidden).background(Color.appBackground)
+        .listStyle(.plain).scrollContentBackground(.hidden).screenBackground()
         .refreshable { await model.load() }
     }
 }
@@ -142,7 +142,7 @@ struct SubUserEditorSheet: View {
                 }
                 PermissionEditor(selection: $permissions)
             }
-            .scrollContentBackground(.hidden).background(Color.appBackground)
+            .scrollContentBackground(.hidden).screenBackground()
             .navigationTitle(title).navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
