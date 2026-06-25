@@ -75,15 +75,19 @@ struct UserAdminView: View {
                 Text(error).font(.footnote).foregroundStyle(.appDestructive).listRowBackground(Color.appCard)
             }
             ForEach(model.state.value ?? []) { user in
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack {
-                        Text(user.displayName).foregroundStyle(.appForeground).lineLimit(1)
-                        Spacer()
-                        RoleBadge(role: user.role)
-                    }
-                    Text(user.email).font(.caption).foregroundStyle(.appMuted).lineLimit(1)
-                    if user.isSuspended {
-                        Text("Suspended").font(.caption2).foregroundStyle(.appDestructive)
+                NavigationLink {
+                    AdminUserDetailView(userId: user.id, preview: user)
+                } label: {
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack {
+                            Text(user.displayName).foregroundStyle(.appForeground).lineLimit(1)
+                            Spacer()
+                            RoleBadge(role: user.role)
+                        }
+                        Text(user.email).font(.caption).foregroundStyle(.appMuted).lineLimit(1)
+                        if user.isSuspended {
+                            Text("Suspended").font(.caption2).foregroundStyle(.appDestructive)
+                        }
                     }
                 }
                 .listRowBackground(Color.appCard)

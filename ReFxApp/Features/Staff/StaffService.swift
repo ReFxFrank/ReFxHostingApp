@@ -1,10 +1,16 @@
 import Foundation
 
-/// Staff/admin REST surface (admin.controller.ts, nodes via /admin/nodes,
-/// users.controller). Role-gated server-side (SUPPORT for queue, ADMIN for the
-/// rest); the UI only shows what the role allows but the API is authoritative.
+/// Staff/admin REST surface (`admin.controller.ts`). Role/permission-gated
+/// server-side; the UI only shows what the role allows but the API is
+/// authoritative (every route declares a granular @RequirePerm).
 struct StaffService {
     let client: APIClient
+
+    // MARK: Overview
+
+    func metrics() async throws -> AdminMetrics {
+        try await client.send(.get("admin/metrics"))
+    }
 
     // MARK: Servers (platform-wide)
 
@@ -15,12 +21,20 @@ struct StaffService {
         return try await client.sendPaginated(.get("admin/servers", query: items))
     }
 
+    func deleteServer(_ id: String) async throws {
+        try await client.sendVoid(.delete("admin/servers/\(id)"))
+    }
+
     // MARK: Nodes
 
     func nodes() async throws -> [NodeAdmin] {
         let page: Page<NodeAdmin> = try await client.sendPaginated(
             .get("admin/nodes", query: [URLQueryItem(name: "pageSize", value: "100")]))
         return page.items
+    }
+
+    func node(_ id: String) async throws -> NodeAdmin {
+        try await client.send(.get("admin/nodes/\(id)"))
     }
 
     func pingNode(_ id: String) async throws -> NodePing {
@@ -35,6 +49,16 @@ struct StaffService {
         try await client.sendVoid(.post("admin/nodes/\(id)/update-agent"))
     }
 
+    func clearSteamCache(_ id: String) async throws {
+        try await client.sendVoid(.post("admin/nodes/\(id)/steam-cache/clear"))
+    }
+
+    /// Latest published agent release tag (for the "update available" badge).
+    func agentLatest() async throws -> String? {
+        let r: AgentLatest = try await client.send(.get("admin/nodes/agent-latest"))
+        return r.latest
+    }
+
     // MARK: Users
 
     func users(page: Int = 1, query: String? = nil) async throws -> Page<AdminUser> {
@@ -44,17 +68,61 @@ struct StaffService {
         return try await client.sendPaginated(.get("admin/users", query: items))
     }
 
-    func suspendUser(_ id: String) async throws {
-        try await client.sendVoid(.post("users/\(id)/suspend"))
+    func userDetail(_ id: String) async throws -> AdminUserDetail {
+        try await client.send(.get("admin/users/\(id)"))
     }
 
-    func reactivateUser(_ id: String) async throws {
-        try await client.sendVoid(.post("users/\(id)/reactivate"))
+    /// Account state transitions go through the admin PATCH (BANNED / SUSPENDED /
+    /// ACTIVE), which the server maps to ban/suspend/reactivate.
+    func setUserState(_ id: String, state: String) async throws {
+        try await client.sendVoid(.patch("admin/users/\(id)", body: StateBody(state: state)))
+    }
+    func suspendUser(_ id: String) async throws { try await setUserState(id, state: "SUSPENDED") }
+    func reactivateUser(_ id: String) async throws { try await setUserState(id, state: "ACTIVE") }
+    func banUser(_ id: String) async throws { try await setUserState(id, state: "BANNED") }
+
+    func verifyEmail(_ id: String) async throws {
+        try await client.sendVoid(.post("admin/users/\(id)/verify-email"))
     }
 
     func setRole(_ id: String, role: String) async throws {
         try await client.sendVoid(.patch("admin/users/\(id)/role", body: RoleBody(role: role)))
     }
 
+    // MARK: Audit log
+
+    func auditLogs(page: Int = 1) async throws -> Page<AuditEntry> {
+        try await client.sendPaginated(.get("admin/audit-logs", query: [
+            URLQueryItem(name: "page", value: String(page)),
+            URLQueryItem(name: "pageSize", value: "40"),
+        ]))
+    }
+
+    // MARK: Platform alerts (banner)
+
+    func alerts() async throws -> [AdminAlert] {
+        try await client.send(.get("admin/alerts"))
+    }
+
+    func createAlert(severity: AlertSeverity, title: String, body: String) async throws {
+        try await client.sendVoid(.post("admin/alerts",
+            body: CreateAlertBody(severity: severity.rawValue, title: title, body: body, isActive: true)))
+    }
+
+    func setAlertActive(_ id: String, isActive: Bool) async throws {
+        try await client.sendVoid(.patch("admin/alerts/\(id)", body: AlertActiveBody(isActive: isActive)))
+    }
+
+    func deleteAlert(_ id: String) async throws {
+        try await client.sendVoid(.delete("admin/alerts/\(id)"))
+    }
+
+    // MARK: Bodies
+
+    private struct StateBody: Encodable { let state: String }
     private struct RoleBody: Encodable { let role: String }
+    private struct CreateAlertBody: Encodable {
+        let severity: String; let title: String; let body: String; let isActive: Bool
+    }
+    private struct AlertActiveBody: Encodable { let isActive: Bool }
 }
