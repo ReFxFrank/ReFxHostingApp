@@ -128,7 +128,9 @@ struct WorkshopView: View {
     }
 }
 
-/// Minecraft loader + version config. Saving triggers a reinstall.
+/// Minecraft loader + version config. Loader, Minecraft version and loader build
+/// are live dropdowns sourced from the catalog (scoped to the chosen loader, like
+/// the web). Saving triggers a reinstall.
 struct MinecraftView: View {
     @EnvironmentObject private var session: AppSession
     let serverId: String
@@ -136,12 +138,23 @@ struct MinecraftView: View {
     @State private var loader = "paper"
     @State private var version = "latest"
     @State private var loaderVersion = "latest"
+    @State private var versions: [String] = []
+    @State private var builds: [String] = []
     @State private var isSaving = false
     @State private var message: String?
     @State private var isError = false
     @State private var confirm = false
 
     private let loaders = ["vanilla", "paper", "fabric", "forge", "neoforge"]
+    private var needsBuild: Bool { ["fabric", "forge", "neoforge"].contains(loader) }
+    private var buildLabel: String {
+        switch loader {
+        case "fabric": return "Fabric loader"
+        case "forge": return "Forge build"
+        case "neoforge": return "NeoForge build"
+        default: return "Loader build"
+        }
+    }
 
     var body: some View {
         Form {
@@ -149,16 +162,31 @@ struct MinecraftView: View {
                 Picker("Loader", selection: $loader) {
                     ForEach(loaders, id: \.self) { Text($0.capitalized).tag($0) }
                 }
-                TextField("Version (latest or e.g. 1.21.1)", text: $version)
-                    .textInputAutocapitalization(.never).autocorrectionDisabled()
-                if loader != "vanilla" {
-                    TextField("Loader build (latest/recommended)", text: $loaderVersion)
-                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                .pickerStyle(.menu)
+
+                Picker("Minecraft version", selection: $version) {
+                    Text("Latest (recommended)").tag("latest")
+                    if version != "latest", !versions.contains(version) {
+                        Text("\(version) (current)").tag(version)
+                    }
+                    ForEach(versions, id: \.self) { Text($0).tag($0) }
+                }
+                .pickerStyle(.menu)
+
+                if needsBuild {
+                    Picker(buildLabel, selection: $loaderVersion) {
+                        Text("Latest").tag("latest")
+                        if loaderVersion != "latest", !builds.contains(loaderVersion) {
+                            Text("\(loaderVersion) (current)").tag(loaderVersion)
+                        }
+                        ForEach(builds, id: \.self) { Text($0).tag($0) }
+                    }
+                    .pickerStyle(.menu)
                 }
             } header: {
-                Text("Minecraft")
+                Eyebrow("Loader & version")
             } footer: {
-                Text("Changing the loader or version reinstalls the server software.")
+                Text("Changing the loader or version reinstalls the server software (world & files preserved).")
             }
             .listRowBackground(Color.appCard)
 
@@ -176,12 +204,32 @@ struct MinecraftView: View {
         }
         .scrollContentBackground(.hidden).screenBackground()
         .navigationTitle("Minecraft").navigationBarTitleDisplayMode(.inline)
+        .task { await loadVersions(); await loadBuilds() }
+        .onChange(of: loader) { _ in
+            version = "latest"; loaderVersion = "latest"; builds = []
+            Task { await loadVersions(); await loadBuilds() }
+        }
+        .onChange(of: version) { _ in
+            loaderVersion = "latest"
+            Task { await loadBuilds() }
+        }
         .confirmationDialog("Apply and reinstall?", isPresented: $confirm, titleVisibility: .visible) {
             Button("Apply & reinstall", role: .destructive) { Task { await save() } }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("The server will reinstall with \(loader.capitalized) \(version). It will be offline during the process.")
         }
+    }
+
+    private func loadVersions() async {
+        versions = (try? await session.catalog.minecraftVersions(loader: loader)) ?? []
+    }
+
+    private func loadBuilds() async {
+        guard needsBuild else { builds = []; return }
+        // Backend returns [] for forge/neoforge when version is "latest"; Fabric's
+        // loader list is Minecraft-independent, so it loads regardless.
+        builds = (try? await session.catalog.minecraftBuilds(loader: loader, version: version)) ?? []
     }
 
     private func save() async {

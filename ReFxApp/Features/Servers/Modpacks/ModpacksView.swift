@@ -8,6 +8,8 @@ final class ModpacksViewModel: ObservableObject {
     @Published var isSearching = false
     @Published var message: String?
     @Published var isError = false
+    /// True while showing the default popular list (no active query).
+    @Published private(set) var isFeatured = true
 
     @Published var versionsFor: ModSearchResult?
     @Published private(set) var versions: [ModpackVersion] = []
@@ -26,12 +28,23 @@ final class ModpacksViewModel: ObservableObject {
         installed = try? await service.installed(serverId)
     }
 
+    /// Popular modpacks shown on open (empty-query search → Modrinth relevance).
+    /// Skips re-fetching when a populated featured list is already on screen.
+    func loadFeatured() async {
+        guard let service, !(isFeatured && !results.isEmpty) else { return }
+        isSearching = true
+        defer { isSearching = false }
+        isFeatured = true
+        results = (try? await service.search(serverId, query: "")) ?? []
+    }
+
     func search() async {
         guard let service else { return }
         let q = query.trimmingCharacters(in: .whitespaces)
-        guard !q.isEmpty else { results = []; return }
+        guard !q.isEmpty else { await loadFeatured(); return }
         isSearching = true
         defer { isSearching = false }
+        isFeatured = false
         do { results = try await service.search(serverId, query: q) }
         catch { flash("Search failed.", error: true) }
     }
@@ -87,6 +100,15 @@ struct ModpacksView: View {
                     installedCard(installed)
                 }
                 searchBar
+
+                if !model.results.isEmpty {
+                    SectionHeader(model.isFeatured ? "Popular modpacks" : "Results",
+                                  systemImage: model.isFeatured ? "flame.fill" : "magnifyingglass")
+                        .padding(.horizontal, 4).padding(.top, 2)
+                } else if model.isSearching {
+                    ProgressView().tint(.appPrimary).frame(maxWidth: .infinity).padding(.top, 24)
+                }
+
                 ForEach(model.results) { pack in
                     Button { Task { await model.openVersions(pack) } } label: {
                         ModResultRow(mod: pack, installing: false, onInstall: { Task { await model.openVersions(pack) } })
@@ -103,7 +125,7 @@ struct ModpacksView: View {
             VersionPicker(pack: pack, versions: model.versions, loading: model.loadingVersions,
                           installingId: model.installingVersionId) { v in Task { await model.install(v) } }
         }
-        .task { model.bind(session); await model.loadInstalled() }
+        .task { model.bind(session); await model.loadInstalled(); await model.loadFeatured() }
     }
 
     private var searchBar: some View {

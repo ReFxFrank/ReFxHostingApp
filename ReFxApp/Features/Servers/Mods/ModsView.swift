@@ -153,6 +153,18 @@ struct ModResultRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
+            AsyncImage(url: URL(string: mod.iconUrl ?? "")) { phase in
+                if let image = phase.image {
+                    image.resizable().scaledToFill()
+                } else {
+                    Image(systemName: "shippingbox.fill").font(.title3).foregroundStyle(.appLabel)
+                }
+            }
+            .frame(width: 46, height: 46)
+            .background(Color.appPopover)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Color.appBorder, lineWidth: 1))
             VStack(alignment: .leading, spacing: 3) {
                 Text(mod.title).font(.subheadline.weight(.semibold)).foregroundStyle(.appForeground).lineLimit(1)
                 if let desc = mod.description {
