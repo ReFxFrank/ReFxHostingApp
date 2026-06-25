@@ -7,54 +7,46 @@ struct StaffHomeView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
+            ScrollView {
+                VStack(spacing: 10) {
                     NavigationLink {
                         StaffQueueView()
                     } label: {
-                        StaffMenuRow(icon: "ticket", title: "Support queue",
-                                     subtitle: "Triage, reply, assign")
+                        ManageRow(icon: "ticket", title: "Support queue",
+                                  subtitle: "Triage, reply, assign")
                     }
+                    .buttonStyle(.plain)
+
                     NavigationLink {
                         AdminServersView()
                     } label: {
-                        StaffMenuRow(icon: "server.rack", title: "Server admin",
-                                     subtitle: "Manage / restart any server")
+                        ManageRow(icon: "server.rack", title: "Server admin",
+                                  subtitle: "Manage / restart any server")
                     }
+                    .buttonStyle(.plain)
+
                     if role.isAdmin {
                         NavigationLink {
                             NodeAdminView()
                         } label: {
-                            StaffMenuRow(icon: "externaldrive.connected.to.line.below",
-                                         title: "Node health", subtitle: "Ping, restart agent")
+                            ManageRow(icon: "externaldrive.connected.to.line.below",
+                                      title: "Node health", subtitle: "Ping, restart agent")
                         }
+                        .buttonStyle(.plain)
+
                         NavigationLink {
                             UserAdminView()
                         } label: {
-                            StaffMenuRow(icon: "person.2", title: "User admin",
-                                         subtitle: "Suspend, role, search")
+                            ManageRow(icon: "person.2", title: "User admin",
+                                      subtitle: "Suspend, role, search")
                         }
+                        .buttonStyle(.plain)
                     }
                 }
-                .listRowBackground(Color.appCard)
+                .padding(16)
             }
-            .scrollContentBackground(.hidden)
-            .background(Color.appBackground)
+            .screenBackground()
             .navigationTitle("Staff")
         }
-    }
-}
-
-struct StaffMenuRow: View {
-    let icon: String, title: String, subtitle: String
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon).foregroundStyle(.appPrimary).frame(width: 26)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).foregroundStyle(.appForeground)
-                Text(subtitle).font(.caption).foregroundStyle(.appMuted)
-            }
-        }
-        .padding(.vertical, 4)
     }
 }

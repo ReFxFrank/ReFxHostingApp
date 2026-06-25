@@ -12,7 +12,7 @@ struct AccountView: View {
                         .listRowBackground(Color.appCard)
                 }
 
-                Section("Account") {
+                Section(header: Eyebrow("Account").padding(.bottom, 2)) {
                     NavigationLink {
                         NotificationsView()
                     } label: {
@@ -37,7 +37,7 @@ struct AccountView: View {
                 }
                 .listRowBackground(Color.appCard)
 
-                Section("App") {
+                Section(header: Eyebrow("App").padding(.bottom, 2)) {
                     NavigationLink {
                         ConnectionSettingsView()
                     } label: {

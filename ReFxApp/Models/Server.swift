@@ -38,9 +38,10 @@ enum ServerState: String, Codable, Equatable {
         }
     }
 
-    /// Loud states the home screen surfaces prominently.
+    /// Loud states the home screen surfaces prominently. Offline is a normal,
+    /// user-initiated state — NOT an alarm — so it is deliberately excluded.
     var needsAttention: Bool {
-        self == .offline || self == .suspended || self == .crashed || self == .pendingPayment
+        self == .suspended || self == .crashed || self == .pendingPayment
     }
 
     /// A mid-transition state where power actions should be disabled/debounced.
