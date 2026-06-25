@@ -133,14 +133,20 @@ jobs:
             -archivePath "$RUNNER_TEMP/ReFxApp.xcarchive" \
             CURRENT_PROJECT_VERSION="${{ steps.bn.outputs.value }}"
 
-      - name: Export .ipa
+      - name: Export & upload to TestFlight
         run: |
+          # destination=upload makes exportArchive sign-export AND upload in one
+          # step, authenticating the delivery with the API key passed by explicit
+          # path (more reliable than altool's well-known-dir lookup, which hit a
+          # -26000 auth failure). Signing is manual + already applied in archive,
+          # so this does not touch the broken automatic-provisioning path.
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
             <key>method</key><string>app-store</string>
+            <key>destination</key><string>upload</string>
             <key>signingStyle</key><string>manual</string>
             <key>teamID</key><string>${{ secrets.APPLE_TEAM_ID }}</string>
             <key>provisioningProfiles</key>
@@ -154,18 +160,10 @@ jobs:
           xcodebuild -exportArchive \
             -archivePath "$RUNNER_TEMP/ReFxApp.xcarchive" \
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
-            -exportPath "$RUNNER_TEMP/export"
-          ls -la "$RUNNER_TEMP/export"
-
-      - name: Upload to TestFlight
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-        run: |
-          IPA=$(ls "$RUNNER_TEMP/export"/*.ipa | head -1)
-          echo "Uploading $IPA"
-          xcrun altool --upload-app -f "$IPA" -t ios \
-            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+            -exportPath "$RUNNER_TEMP/export" \
+            -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey.p8" \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}"
 
       - name: Clean up secrets
         if: always()
