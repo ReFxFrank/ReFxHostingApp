@@ -154,10 +154,11 @@ struct InvoiceDetailView: View {
     }
 
     private func totalRow(_ label: String, _ value: String, bold: Bool = false, color: Color = .appForeground) -> some View {
-        HStack {
+        let valueFont: Font = bold ? .subheadline.weight(.bold) : .caption
+        return HStack {
             Text(label).font(bold ? .subheadline.weight(.semibold) : .caption).foregroundStyle(bold ? .appForeground : .appMuted)
             Spacer()
-            Text(value).font((bold ? .subheadline.weight(.bold) : .caption).monospacedDigit()).foregroundStyle(color)
+            Text(value).font(valueFont.monospacedDigit()).foregroundStyle(color)
         }
     }
 
