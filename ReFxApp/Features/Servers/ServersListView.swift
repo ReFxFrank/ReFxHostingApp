@@ -20,6 +20,13 @@ struct ServersListView: View {
             .screenBackground()
             .navigationTitle("Servers")
             .toolbar { attentionBadge }
+            .toolbar {
+                if FeatureFlags.purchasingEnabled {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        NavigationLink { NewServerView() } label: { Image(systemName: "plus") }
+                    }
+                }
+            }
             .searchable(text: $model.searchText, prompt: "Search servers")
             .onSubmit(of: .search) { Task { await model.load() } }
             .refreshable { await model.refresh() }
