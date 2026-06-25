@@ -3,7 +3,7 @@ import UIKit
 
 @MainActor
 final class PlatformAlertsViewModel: ObservableObject {
-    @Published private(set) var state: LoadState<[PlatformAlert]> = .idle
+    @Published private(set) var state: LoadState<[AdminAlert]> = .idle
     @Published var actionError: String?
     private var service: StaffService?
 
@@ -27,11 +27,11 @@ final class PlatformAlertsViewModel: ObservableObject {
         catch { actionError = "Couldn't post the alert."; return false }
     }
 
-    func setActive(_ alert: PlatformAlert, isActive: Bool) async {
+    func setActive(_ alert: AdminAlert, isActive: Bool) async {
         await run { try await $0.setAlertActive(alert.id, isActive: isActive) }
     }
 
-    func delete(_ alert: PlatformAlert) async {
+    func delete(_ alert: AdminAlert) async {
         await run { try await $0.deleteAlert(alert.id) }
     }
 
@@ -77,7 +77,7 @@ struct PlatformAlertsView: View {
         .task { model.bind(session); if model.state.value == nil { await model.load() } }
     }
 
-    private func list(_ alerts: [PlatformAlert]) -> some View {
+    private func list(_ alerts: [AdminAlert]) -> some View {
         VStack(spacing: 12) {
             if let actionError = model.actionError {
                 Text(actionError).font(.footnote).foregroundStyle(.appDestructive)
@@ -94,7 +94,7 @@ struct PlatformAlertsView: View {
 }
 
 private struct AlertCard: View {
-    let alert: PlatformAlert
+    let alert: AdminAlert
     let onToggle: (Bool) -> Void
     let onDelete: () -> Void
 

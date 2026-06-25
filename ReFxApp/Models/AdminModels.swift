@@ -236,7 +236,7 @@ enum AlertSeverity: String, Codable, Equatable {
 }
 
 /// `GET /admin/alerts` — platform-wide banner alerts (GlobalAlert).
-struct PlatformAlert: Decodable, Identifiable, Equatable {
+struct AdminAlert: Decodable, Identifiable, Equatable {
     let id: String
     let severity: AlertSeverity?
     let title: String

@@ -100,7 +100,7 @@ struct StaffService {
 
     // MARK: Platform alerts (banner)
 
-    func alerts() async throws -> [PlatformAlert] {
+    func alerts() async throws -> [AdminAlert] {
         try await client.send(.get("admin/alerts"))
     }
 
