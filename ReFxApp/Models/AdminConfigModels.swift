@@ -388,7 +388,7 @@ struct TemplateVariable: Codable, Identifiable, Equatable {
     let sortOrder: Int
 }
 
-struct GameTemplate: Codable, Identifiable, Equatable {
+struct AdminGameTemplate: Codable, Identifiable, Equatable {
     let id: String
     let categoryId: String?
     let category: GameCategory?
@@ -594,7 +594,7 @@ struct Role: Codable, Identifiable, Equatable {
     }
 }
 
-struct PermissionCatalog: Codable, Equatable {
+struct AdminPermissionCatalog: Codable, Equatable {
     let wildcard: String
     let permissions: [String]
 }

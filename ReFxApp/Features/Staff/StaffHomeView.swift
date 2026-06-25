@@ -85,9 +85,19 @@ struct StaffHomeView: View {
             SectionHeader("Platform config", systemImage: "slider.horizontal.3")
                 .padding(.leading, 4)
 
+            NavigationLink { AdminProductsView() } label: {
+                ManageRow(icon: "cube.box", title: "Products & pricing",
+                          subtitle: "Plans, hardware tiers, prices")
+            }.buttonStyle(.plain)
+
             NavigationLink { AdminCouponsView() } label: {
                 ManageRow(icon: "tag", title: "Coupons & gift cards",
                           subtitle: "Discounts and store credit")
+            }.buttonStyle(.plain)
+
+            NavigationLink { AdminRolesView() } label: {
+                ManageRow(icon: "lock.shield", title: "Roles & permissions",
+                          subtitle: "RBAC roles and access")
             }.buttonStyle(.plain)
 
             NavigationLink { AdminLocationsView() } label: {
@@ -117,10 +127,8 @@ private struct StaffWebLink: Identifiable {
     let path: String
 
     static let all: [StaffWebLink] = [
-        .init(icon: "cube.box", title: "Products & pricing", subtitle: "Plans, prices, hardware tiers", path: "admin/products"),
         .init(icon: "gamecontroller", title: "Game templates", subtitle: "Eggs & install configs", path: "admin/templates"),
         .init(icon: "creditcard", title: "Billing", subtitle: "Invoices, orders, payments", path: "admin/invoices"),
-        .init(icon: "lock.shield", title: "Roles & permissions", subtitle: "RBAC roles", path: "admin/roles"),
         .init(icon: "gearshape", title: "Settings", subtitle: "Email, Steam, gateways", path: "admin/settings"),
     ]
 }

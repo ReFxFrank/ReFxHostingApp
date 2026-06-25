@@ -40,10 +40,10 @@ extension StaffService {
 
     // MARK: Game templates  (catalog.manage)
 
-    func templates() async throws -> [GameTemplate] {
+    func templates() async throws -> [AdminGameTemplate] {
         try await client.send(.get("admin/templates"))
     }
-    func template(_ id: String) async throws -> GameTemplate {
+    func template(_ id: String) async throws -> AdminGameTemplate {
         try await client.send(.get("admin/templates/\(id)"))
     }
     func updateTemplate(_ id: String, _ body: UpdateTemplateBody) async throws {
@@ -122,7 +122,7 @@ extension StaffService {
     func roles() async throws -> [Role] {
         try await client.send(.get("admin/roles"))
     }
-    func permissionCatalog() async throws -> PermissionCatalog {
+    func permissionCatalog() async throws -> AdminPermissionCatalog {
         try await client.send(.get("admin/roles/permissions"))
     }
     func createRole(_ body: CreateRoleBody) async throws {
