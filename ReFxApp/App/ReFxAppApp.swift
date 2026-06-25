@@ -43,6 +43,8 @@ struct ReFxAppApp: App {
                 // No push backend, so a backgrounded Live Activity can't update —
                 // end it instead of leaving a frozen pill on screen.
                 LiveActivityManager.endAll()
+                // Re-engage the app-lock (if enabled) so returning requires Face ID.
+                session.lockForBackground()
             } else if phase == .active {
                 Task { await session.refreshUnreadCount() }
             }

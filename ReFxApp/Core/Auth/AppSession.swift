@@ -132,6 +132,14 @@ final class AppSession: ObservableObject {
         if ok { await loadSignedInUser(applyLock: false) }
     }
 
+    /// Re-engage the app-lock when leaving the foreground, so returning to the
+    /// app requires biometric re-auth instead of resuming straight into the
+    /// signed-in session. No-op if the lock is disabled or we aren't signed in.
+    func lockForBackground() {
+        guard appLock.isEnabled, case .signedIn = phase else { return }
+        phase = .locked
+    }
+
     // MARK: - Internal
 
     private func loadSignedInUser(applyLock: Bool) async {

@@ -43,6 +43,10 @@ struct AppLockView: View {
                 Text("ReFx is locked").font(.headline).foregroundStyle(.appForeground)
                 Button("Unlock") { Task { await session.unlock() } }
                     .buttonStyle(.borderedProminent).tint(.appPrimary)
+                // Always-available escape so a user can never be locked out (e.g.
+                // if biometrics/passcode become unavailable on the device).
+                Button("Sign out") { Task { await session.logout() } }
+                    .font(.footnote).tint(.appMuted)
             }
         }
         .task { await session.unlock() }
