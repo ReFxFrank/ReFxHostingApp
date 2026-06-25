@@ -22,6 +22,11 @@ on:
         description: "Build number (must be unique; defaults to the run number)"
         required: false
         default: ""
+  # Tag trigger so it can be fired from the feature branch (workflow_dispatch
+  # requires the workflow on the default branch). Push a tag like testflight-1.
+  push:
+    tags:
+      - "testflight-*"
 
 jobs:
   upload:
