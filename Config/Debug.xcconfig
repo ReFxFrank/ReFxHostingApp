@@ -1,0 +1,16 @@
+#include "Base.xcconfig"
+
+// Default to the LIVE API so the app works immediately in the Simulator with no
+// local backend. It's a real, production server — power actions affect real
+// servers. To develop against a local panel-api instead, set:
+//     API_SCHEME = http
+//     API_HOST   = localhost:4000
+// (or your Mac's LAN IP for a physical device), or override at runtime in
+// Account -> Connection settings. Swagger: <origin>/docs.
+API_SCHEME = https
+API_HOST = api.refx.gg
+WEB_SCHEME = https
+WEB_HOST = refx.gg
+
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) DEBUG
+ONLY_ACTIVE_ARCH = YES

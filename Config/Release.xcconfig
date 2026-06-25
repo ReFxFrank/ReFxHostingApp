@@ -1,0 +1,9 @@
+#include "Base.xcconfig"
+
+// Production defaults — the live ReFx platform. HTTPS only (ATS stays on).
+API_SCHEME = https
+API_HOST = api.refx.gg
+WEB_SCHEME = https
+WEB_HOST = refx.gg
+
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited)

@@ -1,0 +1,82 @@
+# Project spec used by the TestFlight workflow — full app (build 2+):
+# core app + Home Screen widget, manual App Store signing.
+# App Groups (group.com.refx.app) shares server snapshots with the widget;
+# Associated Domains (webcredentials:refx.gg) powers passkey sign-in.
+name: ReFxApp
+options:
+  bundleIdPrefix: com.refx
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+
+configs:
+  Debug: debug
+  Release: release
+
+packages:
+  SocketIO:
+    url: https://github.com/socketio/socket.io-client-swift
+    from: 16.1.0
+
+settings:
+  base:
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.9"
+    DEVELOPMENT_LANGUAGE: en
+    TARGETED_DEVICE_FAMILY: "1,2" # iPhone + iPad
+    # Team applies to every target (incl. SPM resource bundles) so they can be
+    # signed; provisioning profiles are scoped per app/extension target below.
+    DEVELOPMENT_TEAM: FM8Z8BA64H
+
+targets:
+  ReFxApp:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: ReFxApp
+      - path: Shared
+    dependencies:
+      - package: SocketIO
+        product: SocketIO
+      - target: ReFxWidget   # embeds the widget extension
+    settings:
+      base:
+        INFOPLIST_FILE: ReFxApp/Resources/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.refx.app
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ENABLE_USER_SCRIPT_SANDBOXING: "YES"
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "iPhone Distribution"
+        PROVISIONING_PROFILE_SPECIFIER: "ReFx App Store"
+        CODE_SIGN_ENTITLEMENTS: ReFxApp/Resources/ReFxApp.entitlements
+      configs:
+        Debug:
+          xcconfig: Config/Debug.xcconfig
+        Release:
+          xcconfig: Config/Release.xcconfig
+
+  ReFxWidget:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: ReFxWidget
+      - path: Shared
+    settings:
+      base:
+        INFOPLIST_FILE: ReFxWidget/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.refx.app.widget
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "iPhone Distribution"
+        PROVISIONING_PROFILE_SPECIFIER: "ReFx Widget App Store"
+        CODE_SIGN_ENTITLEMENTS: ReFxWidget/ReFxWidget.entitlements
+
+schemes:
+  ReFxApp (Release):
+    build:
+      targets:
+        ReFxApp: all
+    run:
+      config: Release

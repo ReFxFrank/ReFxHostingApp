@@ -1,0 +1,47 @@
+name: iOS Build & Test
+
+# Free macOS CI for the iOS app (public repo). Proves the project compiles and
+# the unit tests pass without needing a local Mac. Runs on every push/PR to the
+# feature branch and main.
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    # macos-15 ships Xcode 16, which reads the project format XcodeGen emits.
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show versions
+        run: xcodebuild -version && swift --version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      # Pick any available iPhone simulator so we don't hard-code a device name
+      # that may not exist on the image.
+      - name: Pick a simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j \
+            | jq -r '[.devices[] | .[] | select(.name | test("iPhone"))][0].udid')
+          echo "Using simulator $UDID"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+
+      - name: Build & test
+        run: |
+          xcodebuild \
+            -project ReFxApp.xcodeproj \
+            -scheme "ReFxApp (Debug)" \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -skipPackagePluginValidation \
+            clean build test \
+            CODE_SIGNING_ALLOWED=NO
