@@ -44,7 +44,6 @@ struct LoginView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var config: AppConfig
     @StateObject private var model = LoginViewModel()
-    @State private var showSettings = false
     @FocusState private var focus: Field?
 
     private enum Field { case email, password }
@@ -63,9 +62,6 @@ struct LoginView: View {
         }
         .screenBackground()
         .scrollDismissesKeyboard(.interactively)
-        .sheet(isPresented: $showSettings) {
-            ConnectionSettingsView().environmentObject(config)
-        }
         .sheet(item: $model.mfaChallenge) { challenge in
             MFAView(token: challenge.token, methods: challenge.methods)
                 .environmentObject(session)
@@ -127,21 +123,11 @@ struct LoginView: View {
     }
 
     private var footer: some View {
-        VStack(spacing: 12) {
-            Button("Create an account or pay an invoice on the web") {
-                WebLink.open(config.webOrigin)
-            }
-            .font(.footnote.weight(.medium))
-            .tint(.appAccentText)
-
-            Button {
-                showSettings = true
-            } label: {
-                Label("Connection settings", systemImage: "gearshape")
-                    .font(.footnote)
-            }
-            .foregroundStyle(.appMuted)
+        Button("Create an account or pay an invoice on the web") {
+            WebLink.open(config.webOrigin)
         }
+        .font(.footnote.weight(.medium))
+        .tint(.appAccentText)
     }
 }
 

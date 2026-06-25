@@ -38,11 +38,6 @@ struct AccountView: View {
                 .listRowBackground(Color.appCard)
 
                 Section(header: Eyebrow("App").padding(.bottom, 2)) {
-                    NavigationLink {
-                        ConnectionSettingsView()
-                    } label: {
-                        Label("Connection settings", systemImage: "gearshape")
-                    }
                     Button {
                         WebLink.open(config.webOrigin, path: "billing")
                     } label: {
