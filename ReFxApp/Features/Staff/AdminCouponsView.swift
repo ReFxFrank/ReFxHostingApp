@@ -118,7 +118,7 @@ struct AdminCouponsView: View {
                 VStack(spacing: 12) {
                     ForEach(coupons) { coupon in
                         CouponCard(coupon: coupon,
-                                   onToggle: { Task { await model.setCouponActive(coupon, isActive: $0) } },
+                                   onToggle: { isActive in Task { await model.setCouponActive(coupon, isActive: isActive) } },
                                    onDelete: { Task { await model.deleteCoupon(coupon) } })
                     }
                 }
@@ -137,7 +137,7 @@ struct AdminCouponsView: View {
                 VStack(spacing: 12) {
                     ForEach(cards) { card in
                         GiftCardCard(card: card,
-                                     onToggle: { Task { await model.setGiftCardActive(card, isActive: $0) } })
+                                     onToggle: { isActive in Task { await model.setGiftCardActive(card, isActive: isActive) } })
                     }
                 }
             },

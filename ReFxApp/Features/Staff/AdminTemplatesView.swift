@@ -183,7 +183,7 @@ struct AdminTemplateDetailView: View {
                 infoRow("Deploy", current.deployMethods.map(\.label).joined(separator: ", "))
                 infoRow("Startup", current.startupCommand)
                 if let steam = current.steamAppId { infoRow("Steam app", String(steam)) }
-                infoRow("Recommended", "\(current.recCpuCores, specifier: "%.1f") vCPU · \(current.recMemoryMb / 1024)GB RAM · \(current.recDiskMb / 1024)GB disk")
+                infoRow("Recommended", String(format: "%.1f vCPU · %dGB RAM · %dGB disk", current.recCpuCores, current.recMemoryMb / 1024, current.recDiskMb / 1024))
                 if let tags = current.tags, !tags.isEmpty { infoRow("Tags", tags.joined(separator: ", ")) }
             }
         }
