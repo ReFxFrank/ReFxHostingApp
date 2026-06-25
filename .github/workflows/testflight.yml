@@ -28,7 +28,8 @@ on:
 
 jobs:
   upload:
-    runs-on: macos-15
+    # macos-26 ships Xcode 26 (iOS 26 SDK), which Apple now requires for uploads.
+    runs-on: macos-26
     timeout-minutes: 45
     env:
       SCHEME: "ReFxApp (Release)"
