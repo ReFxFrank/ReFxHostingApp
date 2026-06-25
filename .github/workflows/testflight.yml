@@ -16,6 +16,9 @@ name: TestFlight Upload
 # The provisioning profile lives in the repo at ci/ReFx_AppStore.mobileprovision.
 
 on:
+  # Auto-upload a TestFlight build on every push to main (i.e. whenever an app
+  # update lands). Build number defaults to the unique run number, so successive
+  # builds never collide. Manual dispatch and testflight-* tags still work too.
   workflow_dispatch:
     inputs:
       build_number:
@@ -23,6 +26,8 @@ on:
         required: false
         default: ""
   push:
+    branches:
+      - main
     tags:
       - "testflight-*"
 
