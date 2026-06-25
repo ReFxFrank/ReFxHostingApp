@@ -6,14 +6,12 @@ name: TestFlight Upload
 # is broken under Xcode 16 (it 401s on appstoreconnect.apple.com/xcbuild/listTeams.action
 # even with valid credentials). Manual signing never touches that path. The signing
 # cert + App Store profile were generated up front via the App Store Connect API and
-# committed / stored as a secret. Upload is done with the same API key via altool.
+# committed / stored as a secret. Upload is done with the same API key.
 #
-# Required repo secrets (Settings -> Secrets and variables -> Actions):
-#   ASC_KEY_ID          App Store Connect API key ID (e.g. 8V5T35NFKV)
-#   ASC_ISSUER_ID       API key issuer id (UUID)
-#   ASC_KEY_P8_BASE64   the .p8 key (raw PEM or base64 — both accepted)
-#   APPLE_TEAM_ID       10-char Apple Developer Team ID (FM8Z8BA64H)
-#   ASC_DIST_P12_BASE64 base64 of the distribution .p12 (private key + cert)
+# The key id / issuer id / team id below are NOT secret (identifiers, useless without
+# the private key) so they are hardcoded to remove paste errors. The only auth secrets:
+#   ASC_KEY_P8_BASE64    the App Store Connect .p8 key (raw PEM or base64 — both accepted)
+#   ASC_DIST_P12_BASE64  base64 of the distribution .p12 (private key + cert)
 #
 # The provisioning profile lives in the repo at ci/ReFx_AppStore.mobileprovision.
 
@@ -37,19 +35,20 @@ jobs:
       BUNDLE_ID: com.refx.app
       PROFILE_NAME: "ReFx App Store"
       P12_PASSWORD: refxci
+      # Non-secret identifiers (safe to hardcode; the .p8 private key is the secret).
+      ASC_KEY_ID: "8V5T35NFKV"
+      ASC_ISSUER_ID: "82d15814-03ed-4912-b694-6addfbe1827e"
+      APPLE_TEAM_ID: "FM8Z8BA64H"
     steps:
       - uses: actions/checkout@v4
 
       - name: Verify secrets are present
         env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           ASC_DIST_P12_BASE64: ${{ secrets.ASC_DIST_P12_BASE64 }}
         run: |
           missing=0
-          for v in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8_BASE64 APPLE_TEAM_ID ASC_DIST_P12_BASE64; do
+          for v in ASC_KEY_P8_BASE64 ASC_DIST_P12_BASE64; do
             if [ -z "${!v}" ]; then echo "::error::Missing secret $v"; missing=1; fi
           done
           [ "$missing" = "0" ] || exit 1
@@ -63,7 +62,6 @@ jobs:
       - name: Write App Store Connect API key
         env:
           ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
         run: |
           mkdir -p "$RUNNER_TEMP/keys"
           KEY="$RUNNER_TEMP/keys/AuthKey.p8"
@@ -76,20 +74,15 @@ jobs:
             echo "::error::ASC_KEY_P8_BASE64 did not yield a valid .p8 key."
             exit 1
           fi
-          # altool/exportArchive look for the key in a well-known dir, named AuthKey_<id>.p8
           mkdir -p "$HOME/.appstoreconnect/private_keys"
           cp "$KEY" "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
           echo "API key written OK"
 
       - name: Verify API key authenticates against App Store Connect
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
         run: |
-          # Sign a JWT with the runner's key and call the REST API. If this is not
-          # 200, the ASC_KEY_P8_BASE64 secret (or key id / issuer) is wrong and the
-          # upload would fail with a confusing "Unauthenticated" error — fail here
-          # instead with a clear message.
+          # Sign a JWT with the runner's key and call the REST API. If not 200, the
+          # ASC_KEY_P8_BASE64 secret is wrong; fail here with a clear message rather
+          # than a confusing "Unauthenticated" error during upload.
           node -e '
             const { createSign } = require("crypto");
             const { readFileSync } = require("fs");
@@ -103,7 +96,7 @@ jobs:
             fetch("https://api.appstoreconnect.apple.com/v1/apps?limit=1", { headers: { Authorization: "Bearer " + jwt } })
               .then(async r => {
                 console.log("App Store Connect REST auth status:", r.status);
-                if (r.status !== 200) { console.log(await r.text()); console.error("::error::API key did not authenticate (key id / issuer / .p8 mismatch). Re-check the ASC_* secrets."); process.exit(1); }
+                if (r.status !== 200) { console.log(await r.text()); console.error("::error::API key did not authenticate. Re-paste ASC_KEY_P8_BASE64 exactly."); process.exit(1); }
                 console.log("API key authenticates correctly.");
               })
               .catch(e => { console.error(e); process.exit(1); });
@@ -118,19 +111,16 @@ jobs:
           security create-keychain -p "$KCH_PASS" "$KCH"
           security set-keychain-settings -lut 21600 "$KCH"
           security unlock-keychain -p "$KCH_PASS" "$KCH"
-          # Make our keychain the default and part of the search list
           security list-keychains -d user -s "$KCH" $(security list-keychains -d user | sed s/\"//g)
           security default-keychain -s "$KCH"
 
           printf '%s' "$ASC_DIST_P12_BASE64" | tr -d '[:space:]' | base64 --decode > "$RUNNER_TEMP/dist.p12"
           security import "$RUNNER_TEMP/dist.p12" -k "$KCH" -P "$P12_PASSWORD" \
             -T /usr/bin/codesign -T /usr/bin/security
-          # Allow codesign to use the key without an interactive prompt
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KCH_PASS" "$KCH" >/dev/null
           echo "Signing identities:"
           security find-identity -v -p codesigning "$KCH"
 
-          # Install the provisioning profile under its UUID
           PROFILE="ci/ReFx_AppStore.mobileprovision"
           security cms -D -i "$PROFILE" > "$RUNNER_TEMP/pp.plist"
           UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$RUNNER_TEMP/pp.plist")
@@ -164,10 +154,7 @@ jobs:
       - name: Export & upload to TestFlight
         run: |
           # destination=upload makes exportArchive sign-export AND upload in one
-          # step, authenticating the delivery with the API key passed by explicit
-          # path (more reliable than altool's well-known-dir lookup, which hit a
-          # -26000 auth failure). Signing is manual + already applied in archive,
-          # so this does not touch the broken automatic-provisioning path.
+          # step, authenticating the delivery with the API key by explicit path.
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -176,7 +163,7 @@ jobs:
             <key>method</key><string>app-store</string>
             <key>destination</key><string>upload</string>
             <key>signingStyle</key><string>manual</string>
-            <key>teamID</key><string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
             <key>provisioningProfiles</key>
             <dict>
               <key>${BUNDLE_ID}</key><string>${PROFILE_NAME}</string>
@@ -190,8 +177,8 @@ jobs:
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
             -exportPath "$RUNNER_TEMP/export" \
             -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey.p8" \
-            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
-            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}"
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
 
       - name: Clean up secrets
         if: always()
