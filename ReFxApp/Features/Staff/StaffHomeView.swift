@@ -78,12 +78,22 @@ struct StaffHomeView: View {
         }
     }
 
-    // MARK: Web link-outs (config-heavy)
+    // MARK: Platform config (native + remaining web link-outs)
 
     @ViewBuilder private var platformConfig: some View {
         VStack(alignment: .leading, spacing: 10) {
             SectionHeader("Platform config", systemImage: "slider.horizontal.3")
                 .padding(.leading, 4)
+
+            NavigationLink { AdminCouponsView() } label: {
+                ManageRow(icon: "tag", title: "Coupons & gift cards",
+                          subtitle: "Discounts and store credit")
+            }.buttonStyle(.plain)
+
+            NavigationLink { AdminLocationsView() } label: {
+                ManageRow(icon: "mappin.and.ellipse", title: "Locations",
+                          subtitle: "Regions for grouping nodes")
+            }.buttonStyle(.plain)
 
             ForEach(StaffWebLink.all) { link in
                 Button {
@@ -109,10 +119,8 @@ private struct StaffWebLink: Identifiable {
     static let all: [StaffWebLink] = [
         .init(icon: "cube.box", title: "Products & pricing", subtitle: "Plans, prices, hardware tiers", path: "admin/products"),
         .init(icon: "gamecontroller", title: "Game templates", subtitle: "Eggs & install configs", path: "admin/templates"),
-        .init(icon: "tag", title: "Coupons & gift cards", subtitle: "Discounts and credit codes", path: "admin/coupons"),
         .init(icon: "creditcard", title: "Billing", subtitle: "Invoices, orders, payments", path: "admin/invoices"),
         .init(icon: "lock.shield", title: "Roles & permissions", subtitle: "RBAC roles", path: "admin/roles"),
-        .init(icon: "mappin.and.ellipse", title: "Locations", subtitle: "Regions & capacity", path: "admin/locations"),
         .init(icon: "gearshape", title: "Settings", subtitle: "Email, Steam, gateways", path: "admin/settings"),
     ]
 }
