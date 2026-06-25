@@ -91,15 +91,12 @@ struct DashboardView: View {
             }
 
             if !summary.servers.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Your servers").font(.caption.weight(.semibold))
-                            .foregroundStyle(.appMuted)
-                        Spacer()
+                VStack(alignment: .leading, spacing: 10) {
+                    SectionHeader("Your servers", systemImage: "server.rack") {
                         Text("\(Format.bytes(Double(disk) * 1_048_576)) disk")
-                            .font(.caption2).foregroundStyle(.appMuted)
+                            .font(.caption2.monospacedDigit()).foregroundStyle(.appMuted)
                     }
-                    .padding(.leading, 4)
+                    .padding(.horizontal, 4)
                     ForEach(summary.servers.prefix(8)) { server in
                         NavigationLink {
                             ServerDetailView(serverId: server.id, preview: server)
@@ -140,7 +137,10 @@ struct PaymentBanner: View {
         .foregroundStyle(.appWarning)
         .padding(Theme.cardPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.appWarning.opacity(0.12))
+        .background(RoundedRectangle(cornerRadius: Theme.cornerRadius, style: .continuous)
+            .fill(Color.appWarning.opacity(0.12)))
+        .overlay(RoundedRectangle(cornerRadius: Theme.cornerRadius, style: .continuous)
+            .strokeBorder(Color.appWarning.opacity(0.35), lineWidth: 1))
         .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadius, style: .continuous))
     }
 
@@ -165,7 +165,10 @@ struct AlertBanner: View {
         }
         .padding(Theme.cardPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.appWarning.opacity(0.1))
+        .background(RoundedRectangle(cornerRadius: Theme.cornerRadius, style: .continuous)
+            .fill(Color.appWarning.opacity(0.10)))
+        .overlay(RoundedRectangle(cornerRadius: Theme.cornerRadius, style: .continuous)
+            .strokeBorder(Color.appWarning.opacity(0.30), lineWidth: 1))
         .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadius, style: .continuous))
     }
 }
