@@ -17,11 +17,21 @@ actor APIClient {
     private var tokenProvider: () async -> String? = { nil }
     private var refreshHandler: () async -> Bool = { false }
 
-    init(config: AppConfig = .shared, session: URLSession = .shared) {
+    init(config: AppConfig = .shared, session: URLSession? = nil) {
         self.config = config
-        self.session = session
+        self.session = session ?? APIClient.makeSession()
         self.decoder = APIClient.makeDecoder()
         self.encoder = APIClient.makeEncoder()
+    }
+
+    /// Token-bearing JSON must never be written to an on-disk cache. An ephemeral
+    /// session keeps URL cache, cookies and credentials in memory only, so
+    /// authenticated responses are not persisted to the app container.
+    private static func makeSession() -> URLSession {
+        let cfg = URLSessionConfiguration.ephemeral
+        cfg.urlCache = nil
+        cfg.requestCachePolicy = .reloadIgnoringLocalCacheData
+        return URLSession(configuration: cfg)
     }
 
     func configure(tokenProvider: @escaping () async -> String?,
