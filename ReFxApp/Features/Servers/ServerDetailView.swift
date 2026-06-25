@@ -147,6 +147,9 @@ private struct ServerDetailContent: View {
         case .voice:
             NavigationLink { VoiceView(serverId: model.serverId) } label: { label }
                 .buttonStyle(.plain)
+        case .upgrade:
+            NavigationLink { ServerUpgradeView(serverId: model.serverId) } label: { label }
+                .buttonStyle(.plain)
         default:
             if section.isWebLinkOut {
                 Button {
