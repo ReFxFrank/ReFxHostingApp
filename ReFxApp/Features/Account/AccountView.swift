@@ -2,7 +2,6 @@ import SwiftUI
 
 struct AccountView: View {
     @EnvironmentObject private var session: AppSession
-    @EnvironmentObject private var config: AppConfig
 
     var body: some View {
         NavigationStack {
@@ -38,10 +37,10 @@ struct AccountView: View {
                 .listRowBackground(Color.appCard)
 
                 Section(header: Eyebrow("App").padding(.bottom, 2)) {
-                    Button {
-                        WebLink.open(config.webOrigin, path: "billing")
+                    NavigationLink {
+                        BillingView()
                     } label: {
-                        Label("Billing & invoices (web)", systemImage: "creditcard")
+                        Label("Billing & invoices", systemImage: "creditcard")
                     }
                 }
                 .listRowBackground(Color.appCard)
