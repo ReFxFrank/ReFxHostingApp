@@ -20,6 +20,13 @@ struct ReFxAppApp: App {
                 .environmentObject(AppConfig.shared)
                 .tint(.appPrimary)
                 .preferredColorScheme(.dark)
+                // Obscure the app-switcher snapshot: when the scene is not active
+                // (inactive/background) cover the UI with an opaque branded
+                // curtain so console output, server IPs and revealed secrets are
+                // not captured in the task-switcher thumbnail. (MASTG snapshot leak.)
+                .overlay {
+                    if scenePhase != .active { PrivacyCurtain() }
+                }
                 .task {
                     // Clear any Live Activity orphaned by a previous run (e.g. the
                     // app was closed mid-operation, freezing the op pill).
@@ -73,5 +80,19 @@ struct ReFxAppApp: App {
         }
         UITabBar.appearance().standardAppearance = tab
         UITabBar.appearance().scrollEdgeAppearance = tab
+    }
+}
+
+/// Opaque branded cover shown while the app is inactive/backgrounded so sensitive
+/// content (console, server IPs, revealed secrets) is not captured in the
+/// app-switcher snapshot.
+private struct PrivacyCurtain: View {
+    var body: some View {
+        ZStack {
+            Color.appBackground.ignoresSafeArea()
+            Image(systemName: "bolt.horizontal.circle.fill")
+                .font(.system(size: 48, weight: .semibold))
+                .foregroundStyle(.appPrimary)
+        }
     }
 }
