@@ -8,17 +8,16 @@ struct ServersListView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color.appBackground.ignoresSafeArea()
-                AsyncStateView(
-                    state: model.state,
-                    isEmpty: { $0.isEmpty },
-                    emptyTitle: "No servers yet",
-                    emptyMessage: "Servers you own or help manage will appear here.",
-                    retry: { Task { await model.load() } },
-                    content: { _ in serverList },
-                    skeleton: { skeletonList })
-            }
+            AsyncStateView(
+                state: model.state,
+                isEmpty: { $0.isEmpty },
+                emptyTitle: "No servers yet",
+                emptyMessage: "Servers you own or help manage will appear here.",
+                retry: { Task { await model.load() } },
+                content: { _ in serverList },
+                skeleton: { skeletonList })
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .screenBackground()
             .navigationTitle("Servers")
             .toolbar { attentionBadge }
             .searchable(text: $model.searchText, prompt: "Search servers")
@@ -89,15 +88,19 @@ struct ServersListView: View {
 struct AttentionBanner: View {
     let count: Int
     var body: some View {
-        HStack {
+        HStack(spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
             Text("\(count) server\(count == 1 ? "" : "s") need\(count == 1 ? "s" : "") attention")
                 .font(.subheadline.weight(.semibold))
             Spacer()
         }
         .foregroundStyle(.appDestructive)
-        .padding()
-        .background(Color.appDestructive.opacity(0.12))
+        .padding(Theme.cardPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: Theme.cornerRadius, style: .continuous)
+            .fill(Color.appDestructive.opacity(0.12)))
+        .overlay(RoundedRectangle(cornerRadius: Theme.cornerRadius, style: .continuous)
+            .strokeBorder(Color.appDestructive.opacity(0.35), lineWidth: 1))
         .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadius, style: .continuous))
     }
 }
