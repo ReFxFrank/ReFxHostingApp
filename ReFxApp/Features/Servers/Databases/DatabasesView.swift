@@ -83,7 +83,7 @@ struct DatabasesView: View {
         .alert("Database password", isPresented: Binding(
             get: { model.revealedPassword != nil }, set: { if !$0 { model.revealedPassword = nil } })) {
             Button("Copy") {
-                if let pw = model.revealedPassword?.password { UIPasteboard.general.string = pw }
+                if let pw = model.revealedPassword?.password { Clipboard.copySecret(pw) }
             }
             Button("Done", role: .cancel) {}
         } message: {

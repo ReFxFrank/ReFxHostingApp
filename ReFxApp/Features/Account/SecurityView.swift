@@ -119,7 +119,7 @@ struct SecurityView: View {
         }
         .alert("API key created", isPresented: Binding(
             get: { model.revealedKey != nil }, set: { if !$0 { model.revealedKey = nil } })) {
-            Button("Copy") { if let k = model.revealedKey { UIPasteboard.general.string = k } }
+            Button("Copy") { if let k = model.revealedKey { Clipboard.copySecret(k) } }
             Button("Done", role: .cancel) {}
         } message: {
             if let key = model.revealedKey {
@@ -161,7 +161,7 @@ struct TotpEnrollView: View {
                 } else if let enrollment {
                     Section {
                         Text(enrollment.secret).font(.callout.monospaced()).textSelection(.enabled)
-                        Button("Copy setup key") { UIPasteboard.general.string = enrollment.secret }
+                        Button("Copy setup key") { Clipboard.copySecret(enrollment.secret) }
                     } header: {
                         Text("1. Add this key to your authenticator")
                     }
