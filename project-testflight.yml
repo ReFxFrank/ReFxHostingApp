@@ -26,6 +26,10 @@ settings:
     SWIFT_VERSION: "5.9"
     DEVELOPMENT_LANGUAGE: en
     TARGETED_DEVICE_FAMILY: "1,2" # iPhone + iPad
+    # Team applies to every target (incl. SPM resource bundles) so they can be
+    # signed, but the provisioning profile is scoped to the app target only —
+    # SPM bundles don't support profiles.
+    DEVELOPMENT_TEAM: FM8Z8BA64H
 
 targets:
   ReFxApp:
