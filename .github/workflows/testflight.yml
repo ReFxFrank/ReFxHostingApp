@@ -76,10 +76,38 @@ jobs:
             echo "::error::ASC_KEY_P8_BASE64 did not yield a valid .p8 key."
             exit 1
           fi
-          # altool looks for the key in a well-known dir, named AuthKey_<id>.p8
+          # altool/exportArchive look for the key in a well-known dir, named AuthKey_<id>.p8
           mkdir -p "$HOME/.appstoreconnect/private_keys"
           cp "$KEY" "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
           echo "API key written OK"
+
+      - name: Verify API key authenticates against App Store Connect
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          # Sign a JWT with the runner's key and call the REST API. If this is not
+          # 200, the ASC_KEY_P8_BASE64 secret (or key id / issuer) is wrong and the
+          # upload would fail with a confusing "Unauthenticated" error — fail here
+          # instead with a clear message.
+          node -e '
+            const { createSign } = require("crypto");
+            const { readFileSync } = require("fs");
+            const kid = process.env.ASC_KEY_ID, iss = process.env.ASC_ISSUER_ID;
+            const key = readFileSync(process.env.RUNNER_TEMP + "/keys/AuthKey.p8", "utf8");
+            const b = (x) => Buffer.from(x).toString("base64").replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+            const now = Math.floor(Date.now()/1000);
+            const si = b(JSON.stringify({alg:"ES256",kid,typ:"JWT"})) + "." + b(JSON.stringify({iss,iat:now,exp:now+180,aud:"appstoreconnect-v1"}));
+            const s = createSign("SHA256"); s.update(si);
+            const jwt = si + "." + b(s.sign({ key, dsaEncoding:"ieee-p1363" }));
+            fetch("https://api.appstoreconnect.apple.com/v1/apps?limit=1", { headers: { Authorization: "Bearer " + jwt } })
+              .then(async r => {
+                console.log("App Store Connect REST auth status:", r.status);
+                if (r.status !== 200) { console.log(await r.text()); console.error("::error::API key did not authenticate (key id / issuer / .p8 mismatch). Re-check the ASC_* secrets."); process.exit(1); }
+                console.log("API key authenticates correctly.");
+              })
+              .catch(e => { console.error(e); process.exit(1); });
+          '
 
       - name: Import signing certificate and profile
         env:
