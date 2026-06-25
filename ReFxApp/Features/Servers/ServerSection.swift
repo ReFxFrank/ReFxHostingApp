@@ -43,7 +43,7 @@ enum ServerSection: String, CaseIterable, Identifiable {
         case .workshop: return "Steam Workshop content"
         case .voice: return "TeamSpeak admin"
         case .switchGame: return "Change the game"
-        case .upgrade: return "Change your plan (web)"
+        case .upgrade: return "Change tier, slots & resources"
         case .settings: return "Startup, variables, reinstall"
         }
     }
@@ -66,8 +66,9 @@ enum ServerSection: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Opens the web panel instead of an in-app screen (billing-sensitive).
-    var isWebLinkOut: Bool { self == .upgrade }
+    /// Opens the web panel instead of an in-app screen. All server sections are
+    /// now native; kept for the generic section router's fallback branch.
+    var isWebLinkOut: Bool { false }
 
     /// Web path segment for a link-out (relative to the server page).
     var webPath: String { rawValue == "switchGame" ? "switch-game" : rawValue }
