@@ -45,22 +45,24 @@ struct LoginView: View {
     @EnvironmentObject private var config: AppConfig
     @StateObject private var model = LoginViewModel()
     @State private var showSettings = false
+    @FocusState private var focus: Field?
+
+    private enum Field { case email, password }
 
     var body: some View {
-        ZStack {
-            Color.appBackground.ignoresSafeArea()
-            ScrollView {
-                VStack(spacing: 22) {
-                    Spacer(minLength: 60)
-                    brand
-                    form
-                    footer
-                }
-                .padding(24)
-                .frame(maxWidth: 440)
-                .frame(maxWidth: .infinity)
+        ScrollView {
+            VStack(spacing: 22) {
+                Spacer(minLength: 56)
+                brand
+                form
+                footer
             }
+            .padding(24)
+            .frame(maxWidth: 440)
+            .frame(maxWidth: .infinity)
         }
+        .screenBackground()
+        .scrollDismissesKeyboard(.interactively)
         .sheet(isPresented: $showSettings) {
             ConnectionSettingsView().environmentObject(config)
         }
@@ -71,57 +73,66 @@ struct LoginView: View {
     }
 
     private var brand: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 12) {
             Image(systemName: "bolt.horizontal.circle.fill")
-                .font(.system(size: 52)).foregroundStyle(.appPrimary)
-            Text("ReFx Hosting").font(.title.bold()).foregroundStyle(.appForeground)
-            Text("Server manager").font(.subheadline).foregroundStyle(.appMuted)
+                .font(.system(size: 40, weight: .semibold))
+                .foregroundStyle(.appPrimary)
+                .frame(width: 84, height: 84)
+                .cardSurface(elevated: true, glow: true)
+            VStack(spacing: 4) {
+                Text("ReFx Hosting").font(.title.bold()).foregroundStyle(.appForegroundStrong)
+                Eyebrow("Server Manager")
+            }
         }
     }
 
     private var form: some View {
         VStack(spacing: 14) {
-            LabeledField(title: "Email") {
+            LabeledField(title: "Email", focused: focus == .email) {
                 TextField("you@example.com", text: $model.email)
                     .keyboardType(.emailAddress)
                     .textContentType(.username)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
+                    .focused($focus, equals: .email)
+                    .submitLabel(.next)
+                    .onSubmit { focus = .password }
             }
-            LabeledField(title: "Password") {
+            LabeledField(title: "Password", focused: focus == .password) {
                 SecureField("••••••••", text: $model.password)
                     .textContentType(.password)
+                    .focused($focus, equals: .password)
                     .submitLabel(.go)
                     .onSubmit { Task { await model.submit(session: session) } }
             }
             if let error = model.errorMessage {
-                Text(error).font(.footnote).foregroundStyle(.appDestructive)
+                Label(error, systemImage: "exclamationmark.triangle.fill")
+                    .font(.footnote).foregroundStyle(.appDestructive)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             Button {
+                focus = nil
                 Task { await model.submit(session: session) }
             } label: {
-                HStack {
+                HStack(spacing: 8) {
                     if model.isSubmitting { ProgressView().tint(.white) }
                     Text(model.isSubmitting ? "Signing in…" : "Sign in")
                 }
-                .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .tint(.appPrimary)
+            .buttonStyle(.refxPrimary)
             .disabled(model.isSubmitting)
         }
-        .padding(20)
+        .padding(18)
         .cardSurface()
     }
 
     private var footer: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
             Button("Create an account or pay an invoice on the web") {
                 WebLink.open(config.webOrigin)
             }
-            .font(.footnote)
+            .font(.footnote.weight(.medium))
+            .tint(.appAccentText)
 
             Button {
                 showSettings = true
@@ -134,20 +145,20 @@ struct LoginView: View {
     }
 }
 
-/// A titled field wrapper with the app's input styling.
+/// A titled field wrapper with the app's ReFx glass input styling. Pass
+/// `focused` from a `@FocusState` to drive the blue focus accent.
 struct LabeledField<Content: View>: View {
     let title: String
+    var focused: Bool = false
     @ViewBuilder let content: Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.caption.weight(.semibold)).foregroundStyle(.appMuted)
+        VStack(alignment: .leading, spacing: 7) {
+            Eyebrow(title)
             content
-                .padding(12)
-                .background(Color.appBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Color.appBorder))
                 .foregroundStyle(.appForeground)
+                .tint(.appPrimary)
+                .refxField(focused: focused)
         }
     }
 }
