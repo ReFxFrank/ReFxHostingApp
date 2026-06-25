@@ -170,6 +170,7 @@ jobs:
             <key>provisioningProfiles</key>
             <dict>
               <key>${BUNDLE_ID}</key><string>${PROFILE_NAME}</string>
+              <key>com.refx.app.widget</key><string>ReFx Widget App Store</string>
             </dict>
             <key>stripSwiftSymbols</key><true/>
           </dict>
