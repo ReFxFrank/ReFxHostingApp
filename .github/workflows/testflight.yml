@@ -1,0 +1,108 @@
+name: TestFlight Upload
+
+# Manually-triggered TestFlight build + upload. Signing is done in CI with an
+# App Store Connect API key (no certificates/profiles to export) via
+# -allowProvisioningUpdates.
+#
+# Required repo secrets:
+#   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8_BASE64, APPLE_TEAM_ID
+# One-time: active Apple Developer membership + an App Store Connect app record
+# with bundle id com.refx.app.
+#
+# Dispatch this against the feature branch (the app code lives there).
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: "Build number (must be unique; defaults to the run number)"
+        required: false
+        default: ""
+  push:
+    tags:
+      - "testflight-*"
+
+jobs:
+  upload:
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      SCHEME: "ReFxApp (Release)"
+      BUNDLE_ID: com.refx.app
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify secrets are present
+        run: |
+          missing=0
+          for v in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8_BASE64 APPLE_TEAM_ID; do
+            if [ -z "${!v}" ]; then echo "::error::Missing secret $v"; missing=1; fi
+          done
+          [ "$missing" = "0" ] || exit 1
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Write App Store Connect API key
+        run: |
+          mkdir -p "$RUNNER_TEMP/keys"
+          echo "${{ secrets.ASC_KEY_P8_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/keys/AuthKey.p8"
+
+      - name: Resolve build number
+        id: bn
+        run: |
+          BN="${{ github.event.inputs.build_number }}"
+          [ -n "$BN" ] || BN="${{ github.run_number }}"
+          echo "value=$BN" >> "$GITHUB_OUTPUT"
+          echo "Using build number $BN"
+
+      - name: Archive
+        run: |
+          xcodebuild archive \
+            -project ReFxApp.xcodeproj \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/ReFxApp.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey.p8" \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}" \
+            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
+            CODE_SIGN_STYLE=Automatic \
+            CURRENT_PROJECT_VERSION="${{ steps.bn.outputs.value }}"
+
+      - name: Export & upload to TestFlight
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store</string>
+            <key>destination</key><string>upload</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>teamID</key><string>${{ secrets.APPLE_TEAM_ID }}</string>
+          </dict>
+          </plist>
+          EOF
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/ReFxApp.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey.p8" \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}"
+
+      - name: Clean up key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/keys/AuthKey.p8"
