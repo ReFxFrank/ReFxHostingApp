@@ -92,6 +92,9 @@ final class ServerDetailViewModel: ObservableObject {
 
     func stopStreaming() {
         socket?.disconnect()
+        // We can't update a Live Activity once we leave (no push), so tear it
+        // down rather than leave a frozen op pill on the Dynamic Island.
+        LiveActivityManager.end(serverId: serverId)
     }
 
     /// Fold socket stats frames into the gauge snapshot.

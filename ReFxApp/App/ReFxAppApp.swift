@@ -21,6 +21,9 @@ struct ReFxAppApp: App {
                 .tint(.appPrimary)
                 .preferredColorScheme(.dark)
                 .task {
+                    // Clear any Live Activity orphaned by a previous run (e.g. the
+                    // app was closed mid-operation, freezing the op pill).
+                    LiveActivityManager.endAll()
                     await session.start()
                     // Ask once; awareness notifications are best-effort (see
                     // BackgroundRefreshScheduler). Declining is fine.
@@ -30,6 +33,9 @@ struct ReFxAppApp: App {
         .onChange(of: scenePhase) { phase in
             if phase == .background {
                 BackgroundRefreshScheduler.shared.schedule()
+                // No push backend, so a backgrounded Live Activity can't update —
+                // end it instead of leaving a frozen pill on screen.
+                LiveActivityManager.endAll()
             } else if phase == .active {
                 Task { await session.refreshUnreadCount() }
             }

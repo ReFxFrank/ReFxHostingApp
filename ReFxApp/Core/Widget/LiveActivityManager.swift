@@ -39,6 +39,30 @@ enum LiveActivityManager {
         }
     }
 
+    /// End every server-op Live Activity immediately. Called on launch and when
+    /// the app backgrounds: without push updates (`pushType: nil`) an activity
+    /// can only be updated while the app is active, so a lingering one would
+    /// freeze on the Dynamic Island / lock screen forever.
+    static func endAll() {
+        guard #available(iOS 16.1, *) else { return }
+        Task {
+            for activity in Activity<ServerOpAttributes>.activities {
+                await activity.end(dismissalPolicy: .immediate)
+            }
+        }
+    }
+
+    /// End the Live Activity for a specific server (e.g. when leaving its screen).
+    static func end(serverId: String) {
+        guard #available(iOS 16.1, *) else { return }
+        Task {
+            for activity in Activity<ServerOpAttributes>.activities
+            where activity.attributes.serverId == serverId {
+                await activity.end(dismissalPolicy: .immediate)
+            }
+        }
+    }
+
     private static func detail(for state: ServerState) -> String {
         switch state {
         case .installing: return "Installing…"
