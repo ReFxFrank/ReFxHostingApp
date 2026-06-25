@@ -99,10 +99,11 @@ struct StatusChip: View {
     let text: String
     let color: Color
     var body: some View {
-        Text(text)
-            .font(.caption2.weight(.semibold))
-            .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(color.opacity(0.16))
+        Text(text.uppercased())
+            .font(.caption2.weight(.bold)).tracking(0.7)
+            .padding(.horizontal, 9).padding(.vertical, 3)
+            .background(color.opacity(0.14))
+            .overlay(Capsule().strokeBorder(color.opacity(0.35), lineWidth: 1))
             .foregroundStyle(color)
             .clipShape(Capsule())
     }
@@ -119,16 +120,20 @@ struct ComingSoonView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Image(systemName: icon).font(.system(size: 48)).foregroundStyle(.appPrimary)
-            Text(title).font(.title2.bold()).foregroundStyle(.appForeground)
+            Image(systemName: icon).font(.system(size: 38, weight: .semibold))
+                .foregroundStyle(.appPrimary)
+                .frame(width: 84, height: 84)
+                .cardSurface(elevated: true, glow: true)
+            Text(title).font(.title2.bold()).foregroundStyle(.appForegroundStrong)
             Text(message).font(.subheadline).foregroundStyle(.appMuted)
                 .multilineTextAlignment(.center).padding(.horizontal, 32)
             if let actionTitle, let action {
                 Button(actionTitle, action: action)
-                    .buttonStyle(.borderedProminent).tint(.appPrimary)
+                    .buttonStyle(.refxPrimary(fullWidth: false))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(24)
         .screenBackground()
     }
 }
