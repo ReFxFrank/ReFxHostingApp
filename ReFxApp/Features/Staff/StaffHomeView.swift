@@ -2,11 +2,11 @@ import SwiftUI
 
 /// Staff section. SUPPORT sees the support queue; ADMIN/OWNER get the full
 /// platform-operations surface (overview, servers, users, nodes, audit, alerts)
-/// plus link-outs to the config-heavy admin areas that live on the web. The API
-/// enforces granular permissions regardless of what the UI shows.
+/// plus the native platform-config area (products, coupons, roles, locations,
+/// templates, billing, settings). The API enforces granular permissions
+/// regardless of what the UI shows.
 struct StaffHomeView: View {
     let role: UserRole
-    @EnvironmentObject private var config: AppConfig
 
     private var isAdmin: Bool { role.isAdmin }
 
@@ -78,7 +78,7 @@ struct StaffHomeView: View {
         }
     }
 
-    // MARK: Platform config (native + remaining web link-outs)
+    // MARK: Platform config (fully native)
 
     @ViewBuilder private var platformConfig: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -90,9 +90,19 @@ struct StaffHomeView: View {
                           subtitle: "Plans, hardware tiers, prices")
             }.buttonStyle(.plain)
 
+            NavigationLink { AdminTemplatesView() } label: {
+                ManageRow(icon: "gamecontroller", title: "Game templates",
+                          subtitle: "Eggs, variables & runtime")
+            }.buttonStyle(.plain)
+
             NavigationLink { AdminCouponsView() } label: {
                 ManageRow(icon: "tag", title: "Coupons & gift cards",
                           subtitle: "Discounts and store credit")
+            }.buttonStyle(.plain)
+
+            NavigationLink { AdminBillingView() } label: {
+                ManageRow(icon: "creditcard", title: "Billing",
+                          subtitle: "Summary, invoices, orders, payments")
             }.buttonStyle(.plain)
 
             NavigationLink { AdminRolesView() } label: {
@@ -105,53 +115,10 @@ struct StaffHomeView: View {
                           subtitle: "Regions for grouping nodes")
             }.buttonStyle(.plain)
 
-            ForEach(StaffWebLink.all) { link in
-                Button {
-                    WebLink.open(config.webOrigin, path: link.path)
-                } label: {
-                    StaffWebRow(icon: link.icon, title: link.title, subtitle: link.subtitle)
-                }
-                .buttonStyle(.plain)
-            }
+            NavigationLink { AdminSettingsView() } label: {
+                ManageRow(icon: "gearshape", title: "Settings",
+                          subtitle: "Email, Steam, payment gateways")
+            }.buttonStyle(.plain)
         }
-    }
-}
-
-/// A config area that lives on the web admin (heavy CRUD better suited to a
-/// larger screen). Tapping opens it in the system browser.
-private struct StaffWebLink: Identifiable {
-    let id = UUID()
-    let icon: String
-    let title: String
-    let subtitle: String
-    let path: String
-
-    static let all: [StaffWebLink] = [
-        .init(icon: "gamecontroller", title: "Game templates", subtitle: "Eggs & install configs", path: "admin/templates"),
-        .init(icon: "creditcard", title: "Billing", subtitle: "Invoices, orders, payments", path: "admin/invoices"),
-        .init(icon: "gearshape", title: "Settings", subtitle: "Email, Steam, gateways", path: "admin/settings"),
-    ]
-}
-
-/// Glassy row for a web link-out — same shape as ManageRow but signals it opens
-/// externally.
-struct StaffWebRow: View {
-    let icon: String
-    let title: String
-    let subtitle: String
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon).foregroundStyle(.appSecondary).frame(width: 26)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).foregroundStyle(.appForeground)
-                Text(subtitle).font(.caption).foregroundStyle(.appMuted)
-            }
-            Spacer()
-            Image(systemName: "arrow.up.forward.square").font(.caption).foregroundStyle(.appLabel)
-        }
-        .padding(Theme.cardPadding)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .cardSurface()
     }
 }
