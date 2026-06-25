@@ -32,7 +32,11 @@ final class AppLock {
         // Allow passcode fallback so a user without working biometrics isn't
         // permanently locked out.
         let policy: LAPolicy = .deviceOwnerAuthentication
-        guard context.canEvaluatePolicy(policy, error: nil) else { return true }
+        // Fail CLOSED: if neither biometrics nor passcode can be evaluated we
+        // cannot prove user presence, so stay locked rather than unlocking. The
+        // lock screen always offers "Sign out", so this can't permanently brick
+        // access. (Previously returned true, which unlocked on evaluation failure.)
+        guard context.canEvaluatePolicy(policy, error: nil) else { return false }
         return await withCheckedContinuation { continuation in
             context.evaluatePolicy(policy, localizedReason: reason) { success, _ in
                 continuation.resume(returning: success)
