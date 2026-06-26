@@ -6,10 +6,34 @@ struct APIEnvelope<T: Decodable>: Decodable {
     let data: T
 }
 
+/// Decodes `Wrapped` if the element is well-formed, otherwise captures the
+/// failure as `nil`. Lets an array of these survive a single malformed element
+/// instead of throwing for the whole collection.
+struct FailableDecodable<Wrapped: Decodable>: Decodable {
+    let value: Wrapped?
+    init(from decoder: Decoder) throws { value = try? Wrapped(from: decoder) }
+}
+
 /// `{ success, data:[...], meta:{ page, pageSize, total, totalPages } }`.
+///
+/// Decoding is **row-tolerant**: one malformed element (a missing required
+/// field, a bad date) drops just that row rather than failing the entire
+/// paginated screen. `droppedCount` records how many rows were skipped so the
+/// caller can log it. `meta` is still required — it drives pagination.
 struct PaginatedEnvelope<Element: Decodable>: Decodable {
     let data: [Element]
     let meta: PageMeta
+    let droppedCount: Int
+
+    private enum CodingKeys: String, CodingKey { case data, meta }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let rows = try c.decode([FailableDecodable<Element>].self, forKey: .data)
+        data = rows.compactMap(\.value)
+        droppedCount = rows.count - data.count
+        meta = try c.decode(PageMeta.self, forKey: .meta)
+    }
 }
 
 struct PageMeta: Decodable, Equatable {

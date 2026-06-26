@@ -31,6 +31,11 @@ actor APIClient {
         let cfg = URLSessionConfiguration.ephemeral
         cfg.urlCache = nil
         cfg.requestCachePolicy = .reloadIgnoringLocalCacheData
+        // Per-request timeout is set on each URLRequest (30s). Also cap the
+        // *overall* time a request (incl. retries/redirects) may run so a
+        // stalled connection can't hang a screen indefinitely.
+        cfg.timeoutIntervalForRequest = 30
+        cfg.timeoutIntervalForResource = 60
         return URLSession(configuration: cfg)
     }
 
@@ -60,6 +65,11 @@ actor APIClient {
         let data = try await perform(endpoint)
         do {
             let env = try decoder.decode(PaginatedEnvelope<E>.self, from: data)
+            if env.droppedCount > 0 {
+                // One or more rows were malformed; we kept the good ones rather
+                // than blanking the whole screen. Surface it for diagnostics.
+                print("⚠️ sendPaginated(\(E.self)): dropped \(env.droppedCount) malformed row(s)")
+            }
             return Page(items: env.data, meta: env.meta)
         } catch {
             throw APIError.decoding(String(describing: error))
@@ -81,8 +91,11 @@ actor APIClient {
         do {
             (data, response) = try await session.data(for: request)
         } catch let urlError as URLError {
+            // A timeout almost always means degraded/absent connectivity, so
+            // present it like an offline error ("check your connection") rather
+            // than a generic failure.
             let offline = [.notConnectedToInternet, .networkConnectionLost,
-                           .dataNotAllowed].contains(urlError.code)
+                           .dataNotAllowed, .timedOut].contains(urlError.code)
             throw APIError.network(isOffline: offline, underlying: urlError.localizedDescription)
         }
 
@@ -138,17 +151,31 @@ actor APIClient {
 
     // MARK: - Coding
 
-    private static func makeDecoder() -> JSONDecoder {
+    /// The single source of truth for REST JSON decoding (custom date strategy).
+    /// Non-private so tests decode models exactly as the app does at runtime.
+    static func makeDecoder() -> JSONDecoder {
         let d = JSONDecoder()
         d.dateDecodingStrategy = .custom { decoder in
-            let raw = try decoder.singleValueContainer().decode(String.self)
-            if let date = ISO8601DateFormatter.withFractional.date(from: raw)
-                ?? ISO8601DateFormatter.plain.date(from: raw) {
-                return date
+            let container = try decoder.singleValueContainer()
+            // String dates: ISO-8601 (with/without fractional seconds) or a
+            // bare calendar date (`yyyy-MM-dd`, common for invoice due dates).
+            if let raw = try? container.decode(String.self) {
+                if let date = ISO8601DateFormatter.withFractional.date(from: raw)
+                    ?? ISO8601DateFormatter.plain.date(from: raw)
+                    ?? DateFormatter.yearMonthDay.date(from: raw) {
+                    return date
+                }
+                throw DecodingError.dataCorrupted(.init(
+                    codingPath: decoder.codingPath,
+                    debugDescription: "Unrecognized date string: \(raw)"))
+            }
+            // Numeric epoch: seconds, or milliseconds when the value is large.
+            if let epoch = try? container.decode(Double.self) {
+                return Date(timeIntervalSince1970: epoch > 1_000_000_000_000 ? epoch / 1000 : epoch)
             }
             throw DecodingError.dataCorrupted(.init(
                 codingPath: decoder.codingPath,
-                debugDescription: "Unrecognized date: \(raw)"))
+                debugDescription: "Unrecognized date value"))
         }
         return d
     }
@@ -167,6 +194,19 @@ private extension ISO8601DateFormatter {
         return f
     }()
     static let plain = ISO8601DateFormatter()
+}
+
+private extension DateFormatter {
+    /// Bare calendar date (`2026-06-26`). Parsed at UTC midnight with a fixed
+    /// POSIX locale so the day is stable regardless of device locale/time zone.
+    static let yearMonthDay: DateFormatter = {
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .iso8601)
+        f.timeZone = TimeZone(identifier: "UTC")
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
 }
 
 /// Type-erasing box so `Endpoint.body: Encodable?` can be encoded directly
