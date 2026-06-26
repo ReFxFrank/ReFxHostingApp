@@ -10,7 +10,12 @@
     </array>
     <key>com.apple.developer.associated-domains</key>
     <array>
+        <!-- Passkey (WebAuthn) relying-party domains. Both must serve
+             /.well-known/apple-app-site-association with this app's webcredentials
+             (verified live at both). Cover www too so a server rpId of either
+             refx.gg or www.refx.gg matches the app's associated domains. -->
         <string>webcredentials:refx.gg</string>
+        <string>webcredentials:www.refx.gg</string>
     </array>
 </dict>
 </plist>
