@@ -29,6 +29,18 @@ final class AdminUserDetailViewModel: ObservableObject {
     func verifyEmail() async { await run { try await $0.verifyEmail(self.userId) } }
     func setRole(_ role: UserRole) async { await run { try await $0.setRole(self.userId, role: role.rawValue) } }
 
+    /// Returns true on success so the sheet can dismiss.
+    func grantCredit(amountMinor: Int, reason: CreditReason, note: String?) async -> Bool {
+        guard let service else { return false }
+        actionError = nil
+        do {
+            try await service.grantCredit(userId: userId, amountMinor: amountMinor, reason: reason, note: note)
+            await load(); return true
+        }
+        catch let error as APIError { actionError = error.userMessage; return false }
+        catch { actionError = "Couldn't update store credit."; return false }
+    }
+
     private func run(_ work: (StaffService) async throws -> Void) async {
         guard let service else { return }
         actionError = nil
@@ -42,6 +54,7 @@ final class AdminUserDetailViewModel: ObservableObject {
 struct AdminUserDetailView: View {
     @StateObject private var model: AdminUserDetailViewModel
     @EnvironmentObject private var session: AppSession
+    @State private var showGrantCredit = false
     private let previewName: String?
 
     init(userId: String, preview: AdminUser? = nil) {
@@ -142,7 +155,17 @@ struct AdminUserDetailView: View {
                     } label: { Label("Mark email verified", systemImage: "envelope.badge") }
                     .buttonStyle(.refxSecondary)
                 }
+                Button {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    showGrantCredit = true
+                } label: { Label("Adjust store credit", systemImage: "creditcard.and.123") }
+                .buttonStyle(.refxSecondary)
                 RoleMenuButton { role in Task { await model.setRole(role) } }
+            }
+        }
+        .sheet(isPresented: $showGrantCredit) {
+            GrantCreditSheet { amountMinor, reason, note in
+                await model.grantCredit(amountMinor: amountMinor, reason: reason, note: note)
             }
         }
     }
@@ -247,6 +270,88 @@ private struct ConfirmingButton: View {
             Button(title, role: .destructive) { Task { await action() } }
             Button("Cancel", role: .cancel) {}
         } message: { Text(message) }
+    }
+}
+
+/// Sheet to add (or deduct) store credit on an account. Amount is entered in
+/// dollars and converted to minor units; toggling "Deduct" negates it.
+private struct GrantCreditSheet: View {
+    /// Returns true on success so the sheet can dismiss itself.
+    let onSubmit: (_ amountMinor: Int, _ reason: CreditReason, _ note: String?) async -> Bool
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var amountText = ""
+    @State private var deduct = false
+    @State private var reason: CreditReason = .adminGrant
+    @State private var note = ""
+    @State private var submitting = false
+
+    private let reasons: [CreditReason] = [.adminGrant, .refund, .adjustment, .giftCard]
+
+    private var amountMinor: Int? {
+        guard let dollars = Double(amountText.trimmingCharacters(in: .whitespaces)), dollars > 0 else { return nil }
+        let minor = Int((dollars * 100).rounded())
+        return deduct ? -minor : minor
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    HStack {
+                        Text("$").foregroundStyle(.appMuted)
+                        TextField("0.00", text: $amountText)
+                            .keyboardType(.decimalPad)
+                            .font(.title3.monospacedDigit())
+                    }
+                    Toggle("Deduct from balance", isOn: $deduct)
+                } header: { Text("Amount") } footer: {
+                    Text(deduct ? "Removes credit from the account." : "Adds credit to the account.")
+                }
+                .listRowBackground(Color.appCard)
+
+                Section("Reason") {
+                    Picker("Reason", selection: $reason) {
+                        ForEach(reasons, id: \.self) { Text($0.label).tag($0) }
+                    }
+                    .pickerStyle(.menu)
+                }
+                .listRowBackground(Color.appCard)
+
+                Section("Note (optional)") {
+                    TextField("Visible in the audit log", text: $note, axis: .vertical)
+                        .lineLimit(1...3)
+                }
+                .listRowBackground(Color.appCard)
+
+                Section {
+                    Button {
+                        guard let amountMinor else { return }
+                        submitting = true
+                        Task {
+                            let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
+                            let ok = await onSubmit(amountMinor, reason, trimmed.isEmpty ? nil : trimmed)
+                            submitting = false
+                            if ok { dismiss() }
+                        }
+                    } label: {
+                        if submitting { ProgressView() } else { Text(deduct ? "Deduct credit" : "Add credit") }
+                    }
+                    .buttonStyle(.refxPrimary)
+                    .disabled(amountMinor == nil || submitting)
+                }
+                .listRowBackground(Color.clear)
+            }
+            .scrollContentBackground(.hidden)
+            .screenBackground()
+            .navigationTitle("Store credit")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
     }
 }
 
