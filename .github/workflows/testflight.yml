@@ -28,6 +28,13 @@ on:
   push:
     branches:
       - main
+    # Skip a TestFlight build when a main push only touches tests, docs, or CI
+    # config (no shipping app change). Manual dispatch still covers those if needed.
+    paths-ignore:
+      - "Tests/**"
+      - "**/*.md"
+      - "docs/**"
+      - ".github/**"
     tags:
       - "testflight-*"
 
