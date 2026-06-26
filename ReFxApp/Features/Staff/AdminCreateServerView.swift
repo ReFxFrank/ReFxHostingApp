@@ -188,8 +188,7 @@ struct AdminCreateServerView: View {
             } else {
                 Picker("Node", selection: $model.nodeId) {
                     ForEach(model.nodes) { node in
-                        Text(node.region?.name.map { "\(node.name) · \($0)" } ?? node.name)
-                            .tag(String?.some(node.id))
+                        Text(nodeLabel(node)).tag(String?.some(node.id))
                     }
                 }
                 .tint(.appPrimary)
@@ -205,13 +204,12 @@ struct AdminCreateServerView: View {
             } else {
                 Picker("Template", selection: $model.templateId) {
                     ForEach(model.templates) { template in
-                        Text(template.category?.name.map { "\($0) · \(template.name)" } ?? template.name)
-                            .tag(String?.some(template.id))
+                        Text(templateLabel(template)).tag(String?.some(template.id))
                     }
                 }
                 .tint(.appPrimary)
                 if let t = model.selectedTemplate {
-                    Text("Recommended: \(numberLabel(t.recCpuCores)) vCPU · \(t.recMemoryMb) MB RAM · \(t.recDiskMb) MB disk")
+                    Text(recommendedLabel(t))
                         .font(.caption2).foregroundStyle(.appMuted)
                 }
             }
@@ -318,6 +316,20 @@ struct AdminCreateServerView: View {
 
     private func numberLabel(_ d: Double) -> String {
         d == d.rounded() ? String(Int(d)) : String(d)
+    }
+
+    private func nodeLabel(_ node: NodeAdmin) -> String {
+        if let region = node.region?.name, !region.isEmpty { return "\(node.name) · \(region)" }
+        return node.name
+    }
+
+    private func templateLabel(_ template: AdminGameTemplate) -> String {
+        if let category = template.category?.name, !category.isEmpty { return "\(category) · \(template.name)" }
+        return template.name
+    }
+
+    private func recommendedLabel(_ t: AdminGameTemplate) -> String {
+        "Recommended: \(numberLabel(t.recCpuCores)) vCPU · \(t.recMemoryMb) MB RAM · \(t.recDiskMb) MB disk"
     }
 }
 
