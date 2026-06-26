@@ -92,6 +92,7 @@ struct AdminCouponsView: View {
                 Button {
                     if tab == .coupons { showCreateCoupon = true } else { showCreateGiftCard = true }
                 } label: { Image(systemName: "plus") }
+                .accessibilityLabel("Add coupon")
             }
         }
         .sheet(isPresented: $showCreateCoupon) {

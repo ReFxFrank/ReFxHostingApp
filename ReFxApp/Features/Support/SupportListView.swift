@@ -43,6 +43,7 @@ struct SupportListView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showCreate = true } label: { Image(systemName: "square.and.pencil") }
+                        .accessibilityLabel("New ticket")
                 }
             }
             .sheet(isPresented: $showCreate) {

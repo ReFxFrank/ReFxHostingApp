@@ -120,6 +120,7 @@ struct TicketDetailView: View {
         } label: {
             Image(systemName: "ellipsis.circle")
         }
+        .accessibilityLabel("Ticket actions")
     }
 
     private func thread(_ detail: TicketDetail) -> some View {

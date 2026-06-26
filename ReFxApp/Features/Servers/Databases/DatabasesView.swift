@@ -73,7 +73,8 @@ struct DatabasesView: View {
         .navigationTitle("Databases")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) { Button { showCreate = true } label: { Image(systemName: "plus") } }
+            ToolbarItem(placement: .topBarTrailing) { Button { showCreate = true } label: { Image(systemName: "plus") }
+                .accessibilityLabel("Add database") }
         }
         .sheet(isPresented: $showCreate) {
             CreateDatabaseSheet { engine, name, remote in

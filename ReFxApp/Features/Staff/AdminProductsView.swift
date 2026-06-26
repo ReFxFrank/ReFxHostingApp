@@ -48,6 +48,7 @@ struct AdminProductsView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showCreate = true } label: { Image(systemName: "plus") }
+                    .accessibilityLabel("Add product")
             }
         }
         .sheet(isPresented: $showCreate) {

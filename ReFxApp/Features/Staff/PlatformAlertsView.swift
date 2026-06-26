@@ -68,6 +68,7 @@ struct PlatformAlertsView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showCompose = true } label: { Image(systemName: "plus") }
+                    .accessibilityLabel("New alert")
             }
         }
         .sheet(isPresented: $showCompose) {

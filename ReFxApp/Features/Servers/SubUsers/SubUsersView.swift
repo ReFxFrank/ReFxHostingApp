@@ -62,7 +62,8 @@ struct SubUsersView: View {
         .navigationTitle("Sub-users")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) { Button { showAdd = true } label: { Image(systemName: "person.badge.plus") } }
+            ToolbarItem(placement: .topBarTrailing) { Button { showAdd = true } label: { Image(systemName: "person.badge.plus") }
+                .accessibilityLabel("Add sub-user") }
         }
         .sheet(isPresented: $showAdd) {
             SubUserEditorSheet(title: "Add sub-user", email: "", permissions: []) { email, perms in
