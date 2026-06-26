@@ -25,6 +25,8 @@ struct PushSettingsView: View {
 
                 actionButton
 
+                diagnostics
+
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "info.circle").foregroundStyle(.appSecondary)
                     Text("Alerts cover server status, billing, and support replies. Instant push is rolling out; until then the app delivers best-effort alerts when it refreshes in the background.")
@@ -40,6 +42,52 @@ struct PushSettingsView: View {
         .navigationTitle("Notifications")
         .navigationBarTitleDisplayMode(.inline)
         .task { await push.refreshStatus() }
+    }
+
+    private var diagnostics: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 10) {
+                SectionHeader("Diagnostics", systemImage: "stethoscope")
+                diagRow("Permission", permissionLabel, ok: push.authorizationStatus == .authorized || push.authorizationStatus == .provisional)
+                diagRow("APNs token", push.deviceToken == nil ? "Not received" : "Received", ok: push.deviceToken != nil)
+                diagRow("Server sync", push.serverSynced ? "Synced" : (push.lastError == nil ? "Pending" : "Failed"), ok: push.serverSynced)
+                if let error = push.lastError {
+                    Text(error).font(.caption2).foregroundStyle(.appDestructive)
+                }
+                if let token = push.deviceToken {
+                    HStack(spacing: 8) {
+                        Text(token.prefix(16) + "…").font(.caption2.monospaced()).foregroundStyle(.appMuted).lineLimit(1)
+                        Spacer()
+                        Button {
+                            UIPasteboard.general.string = token
+                        } label: { Label("Copy token", systemImage: "doc.on.doc").font(.caption2) }
+                            .foregroundStyle(.appPrimary)
+                    }
+                }
+                Button("Re-register this device") { Task { await push.requestAndRegister() } }
+                    .buttonStyle(.refxSecondary(fullWidth: false))
+            }
+        }
+    }
+
+    private func diagRow(_ label: String, _ value: String, ok: Bool) -> some View {
+        HStack {
+            Image(systemName: ok ? "checkmark.circle.fill" : "circle")
+                .font(.caption).foregroundStyle(ok ? .appSuccess : .appMuted)
+            Text(label).font(.caption).foregroundStyle(.appMuted)
+            Spacer()
+            Text(value).font(.caption.weight(.medium)).foregroundStyle(.appForeground)
+        }
+    }
+
+    private var permissionLabel: String {
+        switch push.authorizationStatus {
+        case .authorized: return "Authorized"
+        case .provisional: return "Provisional"
+        case .ephemeral: return "Ephemeral"
+        case .denied: return "Denied"
+        default: return "Not set"
+        }
     }
 
     @ViewBuilder private var actionButton: some View {

@@ -40,6 +40,9 @@ final class PushManager: ObservableObject {
     static let shared = PushManager()
     @Published private(set) var authorizationStatus: UNAuthorizationStatus = .notDetermined
     @Published private(set) var deviceToken: String?
+    /// Diagnostics surfaced in the Notifications settings screen.
+    @Published private(set) var serverSynced = false
+    @Published private(set) var lastError: String?
 
     private weak var session: AppSession?
     private init() {}
@@ -69,11 +72,21 @@ final class PushManager: ObservableObject {
     func handle(deviceToken data: Data) {
         let hex = data.map { String(format: "%02x", $0) }.joined()
         deviceToken = hex
-        Task { try? await session?.account.registerPushToken(hex) }
+        lastError = nil
+        Task {
+            guard let account = session?.account else { lastError = "Not signed in"; return }
+            do { try await account.registerPushToken(hex); serverSynced = true; lastError = nil }
+            catch let error as APIError { serverSynced = false; lastError = error.userMessage }
+            catch { serverSynced = false; lastError = "Upload failed: \(error.localizedDescription)" }
+        }
     }
 
-    /// Best-effort; no token is produced until the entitlement/profile exist.
-    func registrationFailed(_ error: Error) { }
+    /// Called when APNs registration fails — most often a missing entitlement at
+    /// runtime. Surfaced in diagnostics.
+    func registrationFailed(_ error: Error) {
+        serverSynced = false
+        lastError = "APNs registration failed: \(error.localizedDescription)"
+    }
 
     func unregister() {
         guard let token = deviceToken else { return }
