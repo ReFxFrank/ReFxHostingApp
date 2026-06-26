@@ -62,6 +62,7 @@ struct AdminRolesView: View {
                 content: { list($0) },
                 skeleton: { VStack(spacing: 12) { ForEach(0..<4, id: \.self) { _ in SkeletonBlock(height: 84) } } })
             .padding(16)
+            .readableWidth()
         }
         .screenBackground()
         .navigationTitle("Roles & permissions")

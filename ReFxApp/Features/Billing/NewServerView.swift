@@ -68,6 +68,7 @@ struct NewServerView: View {
                     skeleton: { VStack(spacing: 12) { ForEach(0..<3, id: \.self) { _ in SkeletonBlock(height: 88) } } })
             }
             .padding(16)
+            .readableWidth()
         }
         .screenBackground()
         .navigationTitle("New server")
@@ -295,6 +296,7 @@ struct OrderConfigureView: View {
                 }
             }
             .padding(16)
+            .readableWidth()
         }
         .screenBackground()
         .navigationTitle(model.product.name)

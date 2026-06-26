@@ -83,6 +83,7 @@ struct AdminCouponsView: View {
                 }
             }
             .padding(16)
+            .readableWidth()
         }
         .screenBackground()
         .navigationTitle("Coupons & gift cards")

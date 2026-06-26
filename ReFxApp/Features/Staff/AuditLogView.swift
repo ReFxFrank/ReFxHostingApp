@@ -55,6 +55,7 @@ struct AuditLogView: View {
                 content: { list($0) },
                 skeleton: { skeleton })
             .padding(16)
+            .readableWidth()
         }
         .screenBackground()
         .navigationTitle("Audit log")

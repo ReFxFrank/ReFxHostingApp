@@ -30,6 +30,7 @@ struct CreditView: View {
                 content: { content($0) },
                 skeleton: { VStack(spacing: 12) { ForEach(0..<4, id: \.self) { _ in SkeletonBlock(height: 56) } } })
             .padding(16)
+            .readableWidth()
         }
         .screenBackground()
         .navigationTitle("Store credit")

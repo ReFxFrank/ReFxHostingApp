@@ -129,6 +129,7 @@ struct ModpacksView: View {
                 resultsSection
             }
             .padding(16)
+            .readableWidth()
         }
         .refreshable { await model.refresh() }
         .screenBackground()

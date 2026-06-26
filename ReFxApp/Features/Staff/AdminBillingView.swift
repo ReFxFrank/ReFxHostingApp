@@ -116,6 +116,7 @@ struct AdminBillingView: View {
                 }
             }
             .padding(16)
+            .readableWidth()
         }
         .screenBackground()
         .navigationTitle("Billing")

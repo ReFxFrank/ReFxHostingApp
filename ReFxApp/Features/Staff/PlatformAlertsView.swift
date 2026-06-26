@@ -61,6 +61,7 @@ struct PlatformAlertsView: View {
                 content: { list($0) },
                 skeleton: { VStack(spacing: 12) { ForEach(0..<3, id: \.self) { _ in SkeletonBlock(height: 96) } } })
             .padding(16)
+            .readableWidth()
         }
         .screenBackground()
         .navigationTitle("Platform alerts")

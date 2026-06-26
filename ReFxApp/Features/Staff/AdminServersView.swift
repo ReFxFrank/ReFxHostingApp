@@ -62,6 +62,7 @@ struct AdminServersView: View {
                 }
             }
             .padding(16)
+            .readableWidth()
         }
         .refreshable { await model.refresh() }
     }

@@ -59,6 +59,7 @@ struct InvoiceDetailView: View {
                 content: { detail($0) },
                 skeleton: { VStack(spacing: 12) { ForEach(0..<3, id: \.self) { _ in SkeletonBlock(height: 90) } } })
             .padding(16)
+            .readableWidth()
         }
         .screenBackground()
         .navigationTitle(model.state.value?.number ?? "Invoice")
@@ -267,6 +268,7 @@ struct InvoicesListView: View {
                 },
                 skeleton: { VStack(spacing: 10) { ForEach(0..<6, id: \.self) { _ in SkeletonBlock(height: 64) } } })
             .padding(16)
+            .readableWidth()
         }
         .screenBackground()
         .navigationTitle("Invoices")

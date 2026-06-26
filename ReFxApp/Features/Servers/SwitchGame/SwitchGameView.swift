@@ -109,6 +109,7 @@ struct SwitchGameView: View {
                 }
             }
             .padding(16)
+            .readableWidth()
         }
     }
 }

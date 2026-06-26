@@ -183,3 +183,23 @@ struct ScreenBackground: ViewModifier {
 extension View {
     func screenBackground() -> some View { modifier(ScreenBackground()) }
 }
+
+// MARK: - Readable content width (iPad)
+
+/// Constrains content to a comfortable reading column and centers it. On iPhone
+/// the screen is narrower than `maxWidth`, so this is a no-op; on iPad (and other
+/// regular-width contexts) it stops content from stretching edge-to-edge.
+struct ReadableWidth: ViewModifier {
+    var maxWidth: CGFloat = 720
+    func body(content: Content) -> some View {
+        content
+            .frame(maxWidth: maxWidth)
+            .frame(maxWidth: .infinity)   // center the capped column in the full width
+    }
+}
+
+extension View {
+    func readableWidth(_ maxWidth: CGFloat = 720) -> some View {
+        modifier(ReadableWidth(maxWidth: maxWidth))
+    }
+}

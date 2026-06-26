@@ -86,6 +86,7 @@ struct BillingView: View {
                 links
             }
             .padding(16)
+            .readableWidth()
         }
         .screenBackground()
         .navigationTitle("Billing")

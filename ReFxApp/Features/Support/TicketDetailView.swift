@@ -138,6 +138,7 @@ struct TicketDetailView: View {
                     Color.clear.frame(height: 1).id("bottom")
                 }
                 .padding(16)
+                .readableWidth()
             }
             .onChange(of: model.visibleMessages.count) { _ in
                 withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }

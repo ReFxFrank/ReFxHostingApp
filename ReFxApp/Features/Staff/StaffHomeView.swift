@@ -19,6 +19,7 @@ struct StaffHomeView: View {
                     if isAdmin { platformConfig }
                 }
                 .padding(16)
+                .readableWidth()
             }
             .screenBackground()
             .navigationTitle("Staff")

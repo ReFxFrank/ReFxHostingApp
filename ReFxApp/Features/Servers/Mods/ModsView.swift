@@ -121,6 +121,7 @@ struct ModsView: View {
                     }
                 }
                 .padding(16)
+                .readableWidth()
             }
         }
     }

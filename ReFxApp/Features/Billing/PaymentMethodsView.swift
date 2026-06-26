@@ -59,6 +59,7 @@ struct PaymentMethodsView: View {
                 addCardNote
             }
             .padding(16)
+            .readableWidth()
         }
         .screenBackground()
         .navigationTitle("Payment methods")

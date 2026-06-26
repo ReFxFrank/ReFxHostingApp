@@ -23,6 +23,7 @@ struct AdminSettingsView: View {
                 }.buttonStyle(.plain)
             }
             .padding(16)
+            .readableWidth()
         }
         .screenBackground()
         .navigationTitle("Settings")

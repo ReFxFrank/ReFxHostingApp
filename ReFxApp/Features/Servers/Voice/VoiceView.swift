@@ -80,6 +80,7 @@ struct VoiceView: View {
                 }
             }
             .padding(16)
+            .readableWidth()
         }
         .screenBackground()
         .navigationTitle("Voice")

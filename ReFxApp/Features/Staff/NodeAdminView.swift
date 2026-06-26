@@ -111,6 +111,7 @@ struct NodeAdminView: View {
                 }
             }
             .padding(16)
+            .readableWidth()
         }
         .refreshable { await model.load() }
     }

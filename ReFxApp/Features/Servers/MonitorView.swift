@@ -17,6 +17,7 @@ struct MonitorView: View {
                 }
             }
             .padding(16)
+            .readableWidth()
         }
     }
 

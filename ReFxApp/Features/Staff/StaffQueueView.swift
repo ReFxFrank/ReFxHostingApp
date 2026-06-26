@@ -71,6 +71,7 @@ struct StaffQueueView: View {
                 }
             }
             .padding(16)
+            .readableWidth()
         }
         .refreshable { await model.refresh() }
     }

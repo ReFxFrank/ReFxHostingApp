@@ -38,6 +38,7 @@ struct DashboardView: View {
                     content: { summary in content(summary) },
                     skeleton: { skeleton })
                 .padding(16)
+                .readableWidth()
             }
             .screenBackground()
             .navigationTitle(greeting)

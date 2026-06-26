@@ -63,6 +63,7 @@ private struct ServerDetailContent: View {
                 sectionMenu
             }
             .padding(16)
+            .readableWidth()
         }
         .onChange(of: socket.latestStats) { frame in
             if let frame { model.ingest(frame: frame) }

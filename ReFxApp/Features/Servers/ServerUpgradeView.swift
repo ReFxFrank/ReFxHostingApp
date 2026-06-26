@@ -112,6 +112,7 @@ struct ServerUpgradeView: View {
                 content: { content($0) },
                 skeleton: { VStack(spacing: 12) { ForEach(0..<4, id: \.self) { _ in SkeletonBlock(height: 72) } } })
             .padding(16)
+            .readableWidth()
         }
         .screenBackground()
         .navigationTitle("Change plan")

@@ -32,6 +32,7 @@ struct StaffOverviewView: View {
                 content: { content($0) },
                 skeleton: { skeleton })
             .padding(16)
+            .readableWidth()
         }
         .screenBackground()
         .navigationTitle("Overview")

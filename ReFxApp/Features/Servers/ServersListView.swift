@@ -68,6 +68,7 @@ struct ServersListView: View {
                 }
             }
             .padding(16)
+            .readableWidth()
         }
     }
 
@@ -84,6 +85,7 @@ struct ServersListView: View {
                 }
             }
             .padding(16)
+            .readableWidth()
         }
     }
 
