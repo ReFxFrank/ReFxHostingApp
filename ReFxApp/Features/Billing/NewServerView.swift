@@ -349,7 +349,7 @@ struct OrderConfigureView: View {
                 Text("\(model.slots) slots").font(.title3.weight(.semibold)).foregroundStyle(.appForeground)
                 Spacer()
                 Stepper("", value: $model.slots,
-                        in: model.product.minSlots...model.product.maxSlots, step: model.product.slotStep)
+                        in: model.product.slotRange, step: model.product.safeSlotStep)
                     .labelsHidden()
             }
         }

@@ -49,6 +49,15 @@ struct UpgradeOptions: Codable, Equatable {
     }
 
     var perSlotAmount: Money { Money(minorUnits: perSlotAmountMinor, currency: currency) }
+
+    /// Server bounds can arrive malformed (min > max). Normalize so a SwiftUI
+    /// Stepper range built from these never traps (`a...b` precondition: a <= b).
+    var slotRange: ClosedRange<Int> {
+        let lo = min(minSlots, maxSlots), hi = max(minSlots, maxSlots)
+        return lo...hi
+    }
+    /// Stepper step must be >= 1; a 0/negative step from the server would trap.
+    var safeSlotStep: Int { max(1, slotStep) }
 }
 
 struct UpgradePreview: Codable, Equatable {

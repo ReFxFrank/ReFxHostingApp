@@ -83,4 +83,42 @@ final class ServerUpgradeDecodingTests: XCTestCase {
             #"{ "status": "??", "effectiveAt": null, "invoiceId": null, "amountMinor": null, "currency": null }"#)
         XCTAssertEqual(weird.kind, .unknown)
     }
+
+    // MARK: - Slot-range normalization (Stepper crash guard)
+
+    /// A malformed backend payload (min > max, step <= 0) must NOT produce a
+    /// reversed ClosedRange — `a...b` traps when a > b, which would crash the
+    /// new-server and upgrade Stepper screens.
+    func testUpgradeOptionsSlotRangeNeverTraps() throws {
+        let json = """
+        {
+          "perSlot": true, "currency": "USD", "interval": "MONTHLY", "prorationFactor": 1.0,
+          "pendingChange": null,
+          "slots": 8, "minSlots": 64, "maxSlots": 4, "slotStep": 0,
+          "cpuPerSlot": 0.5, "memoryMbPerSlot": 256, "diskMbPerSlot": 512,
+          "perSlotAmountMinor": 200,
+          "cpuCores": 4, "memoryMb": 2048, "diskMb": 4096,
+          "currentTierId": null, "tiers": []
+        }
+        """
+        let opts = try TestJSON.decode(UpgradeOptions.self, json)
+        XCTAssertEqual(opts.slotRange, 4...64)         // bounds normalized low→high
+        XCTAssertEqual(opts.safeSlotStep, 1)           // step clamped to >= 1
+        XCTAssertLessThanOrEqual(opts.slotRange.lowerBound, opts.slotRange.upperBound)
+    }
+
+    func testCatalogProductSlotRangeNeverTraps() throws {
+        let json = """
+        {
+          "id": "p_1", "type": "GAME_SERVER", "billingModel": "PER_SLOT",
+          "name": "Per-slot", "slug": "per-slot", "description": null, "isActive": true,
+          "allowedTemplateIds": [], "perSlot": true, "gameTemplateId": "tpl_1",
+          "minSlots": 32, "maxSlots": 8, "slotStep": -2,
+          "prices": [], "hardwareTiers": []
+        }
+        """
+        let product = try TestJSON.decode(CatalogProduct.self, json)
+        XCTAssertEqual(product.slotRange, 8...32)
+        XCTAssertEqual(product.safeSlotStep, 1)
+    }
 }

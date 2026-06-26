@@ -178,7 +178,7 @@ struct ServerUpgradeView: View {
                     Spacer()
                     Stepper("", value: Binding(get: { model.slots },
                                                set: { model.setSlots($0) }),
-                            in: opts.minSlots...opts.maxSlots, step: opts.slotStep)
+                            in: opts.slotRange, step: opts.safeSlotStep)
                         .labelsHidden()
                 }
                 Text("\(opts.perSlotAmount.formatted) per slot · \(opts.minSlots)–\(opts.maxSlots) range")
