@@ -26,6 +26,15 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
+      - name: Assert iPhone-only device family
+        run: |
+          if grep -Eq 'TARGETED_DEVICE_FAMILY = "?1,2"?' ReFxApp.xcodeproj/project.pbxproj; then
+            echo "::error::Generated project is universal (TARGETED_DEVICE_FAMILY 1,2) — expected iPhone-only"
+            grep -n 'TARGETED_DEVICE_FAMILY' ReFxApp.xcodeproj/project.pbxproj
+            exit 1
+          fi
+          echo "✅ iPhone-only device family confirmed"
+
       # Pick any available iPhone simulator so we don't hard-code a device name
       # that may not exist on the image.
       - name: Pick a simulator
