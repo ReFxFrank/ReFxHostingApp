@@ -90,7 +90,10 @@ private struct ServerDetailContent: View {
                 Eyebrow("Manage", systemImage: "square.grid.2x2")
                     .padding(.leading, 4)
                 VStack(spacing: 10) {
-                    if server.state == .pendingPayment {
+                    // The "Pay now" activation shortcut is a card-purchase entry
+                    // point; hide it on public App Store builds where in-app
+                    // purchasing is disabled (billing stays on the web).
+                    if server.state == .pendingPayment && FeatureFlags.purchasingEnabled {
                         NavigationLink {
                             BillingView()
                         } label: {

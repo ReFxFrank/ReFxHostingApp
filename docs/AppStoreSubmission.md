@@ -50,15 +50,32 @@ report needed. Nothing to do.
 
 Game-server hosting is a service **consumed outside the app**, so paying by
 card is allowed under 3.1.3(e) and must *not* use Apple IAP. To avoid reviewer
-subjectivity, the in-app "Place order / new server" flow is **auto-disabled on
-public App Store builds** and stays on the web (`FeatureFlags.purchasingEnabled`
+subjectivity, **all in-app card-purchase entry points are auto-disabled on
+public App Store builds** and stay on the web (`FeatureFlags.purchasingEnabled`
 returns false unless it's a Debug or TestFlight build).
 
 **What this means for review:** on the build reviewers install from App Store
-Connect (production receipt), there is **no in-app purchase UI at all** — the
-"+" to buy a server is hidden. Existing servers are managed; new ones are
-bought on the website. This keeps the app firmly in "free companion app"
-territory (3.1.3(f)) and sidesteps the IAP-vs-card debate entirely.
+Connect (production receipt), there is **no in-app purchase UI at all**. Every
+card-purchase surface is gated behind `FeatureFlags.purchasingEnabled`:
+
+| Surface | Where | Hidden on public build |
+| --- | --- | --- |
+| New-server "+" | `ServersListView` | ✅ |
+| Server "Upgrade / change plan" section | `ServerSection.isApplicable` | ✅ |
+| Invoice "Pay now" (billing list) | `BillingView` | ✅ |
+| Invoice "Pay <amount>" (detail) | `InvoiceDetailView` | ✅ |
+| Pending-payment "Pay now" row | `ServerDetailView` | ✅ |
+| Login "…or pay an invoice on the web" | `LoginView` footer | ✅ (drops to "Create an account on the web") |
+
+Billing/invoice screens stay **viewable** (read-only) so reviewers can see the
+app's billing surface; only the pay *actions* are withheld. Existing servers are
+managed; new ones and payments happen on the website. This keeps the app firmly
+in "free companion app" territory (3.1.3(f)) and sidesteps the IAP-vs-card
+debate entirely.
+
+> ⚠️ **Maintainer note:** if you add any new pay / checkout / "buy" button,
+> gate it behind `FeatureFlags.purchasingEnabled` too, or the Review Notes below
+> ("no in-app purchase UI at all") stop being true and risk a rejection.
 
 If you ever decide to surface card purchasing in the public build, flip
 `FeatureFlags.productionOverride = true` and add review notes citing 3.1.3(e).

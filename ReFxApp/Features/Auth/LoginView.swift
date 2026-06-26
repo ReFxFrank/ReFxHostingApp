@@ -123,7 +123,12 @@ struct LoginView: View {
     }
 
     private var footer: some View {
-        Button("Create an account or pay an invoice on the web") {
+        // Sign-up is web-only (no in-app account creation). On public App Store
+        // builds in-app purchasing is disabled, so the footer drops the
+        // "pay an invoice" call-to-action and offers account creation only.
+        Button(FeatureFlags.purchasingEnabled
+               ? "Create an account or pay an invoice on the web"
+               : "Create an account on the web") {
             WebLink.open(config.webOrigin)
         }
         .font(.footnote.weight(.medium))

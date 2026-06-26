@@ -82,6 +82,10 @@ enum ServerSection: String, CaseIterable, Identifiable {
         case .workshop: return server.template?.supportsWorkshop == true
         case .voice: return isVoice
         case .console, .switchGame: return !isVoice
+        // Upgrade / change-plan is a paid (card-purchase) flow. On public App
+        // Store builds, in-app purchasing is disabled (Guideline 3.1.3 — service
+        // billing stays on the web), so hide the section entirely there.
+        case .upgrade: return FeatureFlags.purchasingEnabled
         default: return true
         }
     }
