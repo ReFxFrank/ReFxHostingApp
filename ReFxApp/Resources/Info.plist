@@ -81,10 +81,13 @@
     <array>
         <string>com.refx.app.refresh</string>
     </array>
+    <!-- `fetch` backs BGAppRefreshTask (server-health checks). `remote-notification`
+         is intentionally NOT declared: the app's pushes are visible alerts (enabled
+         by the aps-environment entitlement), not silent content-available pushes, so
+         the background-execution mode would be an unused capability (Guideline 2.5.4). -->
     <key>UIBackgroundModes</key>
     <array>
         <string>fetch</string>
-        <string>remote-notification</string>
     </array>
 
     <!-- App Transport Security: HTTPS enforced. Debug builds relax cleartext to

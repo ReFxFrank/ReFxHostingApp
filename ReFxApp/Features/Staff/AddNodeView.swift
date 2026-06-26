@@ -204,7 +204,9 @@ struct AddNodeView: View {
                     .padding(10)
                     .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.appBackground))
                 Button {
-                    UIPasteboard.general.string = result.bootstrapToken
+                    // Local-only + 60s expiry: a bootstrap token is a secret, so
+                    // keep it off Universal Clipboard and out of long-term history.
+                    Clipboard.copySecret(result.bootstrapToken)
                     UINotificationFeedbackGenerator().notificationOccurred(.success)
                 } label: { Label("Copy token", systemImage: "doc.on.doc") }
                 .buttonStyle(.refxSecondary)

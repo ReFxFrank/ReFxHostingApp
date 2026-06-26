@@ -96,6 +96,20 @@ struct AccountService {
 
     private struct TotpCodeBody: Encodable { let code: String }
     private struct CreateApiKeyBody: Encodable { let name: String; let scopes: [String] }
+
+    // MARK: Account lifecycle (GDPR)
+
+    /// `GET /account/export` — everything the platform holds for this account,
+    /// returned as JSON for the user to save/share.
+    func exportData() async throws -> JSONValue {
+        try await client.send(.get("account/export"))
+    }
+
+    /// `DELETE /account` — permanently delete the signed-in account. Required for
+    /// App Store compliance (Guideline 5.1.1(v)) since the app supports sign-up.
+    func deleteAccount() async throws {
+        try await client.sendVoid(.delete("account"))
+    }
 }
 
 /// `GET /account/sessions` → `{ id, ip, userAgent, createdAt, expiresAt }`

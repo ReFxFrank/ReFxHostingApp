@@ -1,8 +1,13 @@
 import SwiftUI
+import UIKit
 
 struct AccountView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var pushRouter: PushRouter
+    @State private var exporting = false
+    @State private var exportItem: ExportFile?
+    @State private var exportError: String?
+    @State private var showDelete = false
 
     /// "1.2 (34)" from the bundle, for the About row.
     static var appVersion: String {
@@ -71,6 +76,25 @@ struct AccountView: View {
                 }
                 .listRowBackground(Color.appCard)
 
+                Section(header: Eyebrow("Privacy & data").padding(.bottom, 2)) {
+                    if let exportError {
+                        Text(exportError).font(.footnote).foregroundStyle(.appDestructive)
+                    }
+                    Button { exportData() } label: {
+                        HStack {
+                            Label("Export my data", systemImage: "square.and.arrow.up").foregroundStyle(.appForeground)
+                            Spacer()
+                            if exporting { ProgressView() }
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain).disabled(exporting)
+                    Button(role: .destructive) { showDelete = true } label: {
+                        Label("Delete account", systemImage: "trash")
+                    }
+                }
+                .listRowBackground(Color.appCard)
+
                 Section {
                     Button(role: .destructive) {
                         Task { await session.logout() }
@@ -88,6 +112,99 @@ struct AccountView: View {
                 set: { if !$0 { pushRouter.invoiceId = nil } })) {
                 if let id = pushRouter.invoiceId { InvoiceDetailView(invoiceId: id) }
             }
+            .sheet(item: $exportItem) { ShareSheet(url: $0.url) }
+            .sheet(isPresented: $showDelete) { DeleteAccountSheet() }
+        }
+    }
+
+    /// Fetch the account export, write it to a temp JSON file, and present a
+    /// share sheet so the user can save it (Files, AirDrop, etc.).
+    private func exportData() {
+        exporting = true; exportError = nil
+        Task {
+            defer { exporting = false }
+            do {
+                let json = try await session.account.exportData()
+                let encoder = JSONEncoder()
+                encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+                let data = try encoder.encode(json)
+                let url = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("refx-account-data.json")
+                try data.write(to: url, options: .atomic)
+                exportItem = ExportFile(url: url)
+            } catch let error as APIError { exportError = error.userMessage }
+            catch { exportError = "Couldn't export your data. Try again." }
+        }
+    }
+}
+
+private struct ExportFile: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
+/// System share sheet for the exported data file.
+private struct ShareSheet: UIViewControllerRepresentable {
+    let url: URL
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: [url], applicationActivities: nil)
+    }
+    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
+}
+
+/// Permanent account deletion behind a typed "DELETE" confirmation. On success
+/// the session signs out, which returns the app to the login screen.
+private struct DeleteAccountSheet: View {
+    @EnvironmentObject private var session: AppSession
+    @Environment(\.dismiss) private var dismiss
+    @State private var confirmText = ""
+    @State private var deleting = false
+    @State private var errorText: String?
+
+    private var canDelete: Bool {
+        confirmText.trimmingCharacters(in: .whitespaces).uppercased() == "DELETE" && !deleting
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Label("This permanently deletes your account", systemImage: "exclamationmark.triangle.fill")
+                        .font(.subheadline.weight(.semibold)).foregroundStyle(.appWarning)
+                    Text("Your servers, billing history, and personal data are removed and can’t be recovered. Active services are cancelled.")
+                        .font(.caption).foregroundStyle(.appMuted)
+                }
+                .listRowBackground(Color.appCard)
+
+                Section {
+                    if let errorText {
+                        Text(errorText).font(.footnote).foregroundStyle(.appDestructive)
+                    }
+                    TextField("Type DELETE to confirm", text: $confirmText)
+                        .textInputAutocapitalization(.characters).autocorrectionDisabled()
+                } header: { Text("Confirm") }
+                .listRowBackground(Color.appCard)
+
+                Section {
+                    Button(role: .destructive) {
+                        deleting = true; errorText = nil
+                        Task {
+                            do {
+                                try await session.account.deleteAccount()
+                                await session.logout()
+                            } catch let error as APIError { deleting = false; errorText = error.userMessage }
+                            catch { deleting = false; errorText = "Couldn’t delete the account. Try again." }
+                        }
+                    } label: {
+                        HStack { if deleting { ProgressView() }; Text("Delete my account") }
+                    }
+                    .buttonStyle(.refxDestructive).disabled(!canDelete)
+                }
+                .listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
+            }
+            .scrollContentBackground(.hidden).screenBackground()
+            .navigationTitle("Delete account").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
         }
     }
 }

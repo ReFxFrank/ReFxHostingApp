@@ -34,19 +34,17 @@ struct ReFxAppApp: App {
                     // app was closed mid-operation, freezing the op pill).
                     LiveActivityManager.endAll()
                     await session.start()
-                    // Ask once, then register for APNs if granted. Declining is
-                    // fine — local awareness notifications still work, and remote
-                    // push stays dormant until the entitlement/backend exist.
+                    // Bind only; don't prompt yet. The notification permission
+                    // prompt is deferred to the first signed-in transition so a
+                    // first-launch (logged-out) user isn't asked out of context.
                     PushManager.shared.bind(session)
-                    await PushManager.shared.requestAndRegister()
                 }
-                // Re-register after a sign-in that happens *after* launch (e.g.
-                // fresh install → log in). The launch .task may have fetched the
-                // APNs token while signed out, so the token upload needs retrying
-                // once we're authenticated.
+                // Ask for permission + register once signed in (iOS only shows the
+                // system prompt the first time; later sign-ins just re-register a
+                // possibly-rotated token).
                 .onChange(of: session.phase) { phase in
                     if case .signedIn = phase {
-                        Task { await PushManager.shared.registerIfAuthorized() }
+                        Task { await PushManager.shared.requestAndRegister() }
                     }
                 }
         }
