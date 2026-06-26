@@ -40,6 +40,15 @@ struct ReFxAppApp: App {
                     PushManager.shared.bind(session)
                     await PushManager.shared.requestAndRegister()
                 }
+                // Re-register after a sign-in that happens *after* launch (e.g.
+                // fresh install → log in). The launch .task may have fetched the
+                // APNs token while signed out, so the token upload needs retrying
+                // once we're authenticated.
+                .onChange(of: session.phase) { phase in
+                    if case .signedIn = phase {
+                        Task { await PushManager.shared.registerIfAuthorized() }
+                    }
+                }
         }
         .onChange(of: scenePhase) { phase in
             if phase == .background {
