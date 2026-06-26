@@ -59,7 +59,7 @@ struct PushSettingsView: View {
                         Text(token.prefix(16) + "…").font(.caption2.monospaced()).foregroundStyle(.appMuted).lineLimit(1)
                         Spacer()
                         Button {
-                            UIPasteboard.general.string = token
+                            Clipboard.copySecret(token)
                         } label: { Label("Copy token", systemImage: "doc.on.doc").font(.caption2) }
                             .foregroundStyle(.appPrimary)
                     }

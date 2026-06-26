@@ -123,6 +123,9 @@ final class AppSession: ObservableObject {
     }
 
     func logout() async {
+        // Detach this device's push token while the auth token is still valid,
+        // so pushes don't keep routing to a signed-out (or next) account.
+        await PushManager.shared.unregisterAwaiting()
         await authStore.logout()
         unreadCount = 0
         phase = .signedOut

@@ -326,7 +326,7 @@ private struct GrantCreditSheet: View {
 
                 Section {
                     Button {
-                        guard let amountMinor else { return }
+                        guard !submitting, let amountMinor else { return }
                         submitting = true
                         Task {
                             let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)

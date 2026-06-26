@@ -97,6 +97,13 @@ final class PushManager: ObservableObject {
         guard let token = deviceToken else { return }
         Task { try? await session?.account.unregisterPushToken(token) }
     }
+
+    /// Awaitable unregister for logout: detaches this device's token *before* the
+    /// session clears its auth tokens, so the DELETE is still authenticated.
+    func unregisterAwaiting() async {
+        guard let token = deviceToken else { return }
+        try? await session?.account.unregisterPushToken(token)
+    }
 }
 
 /// Minimal app delegate bridged into SwiftUI for the APNs callbacks SwiftUI
