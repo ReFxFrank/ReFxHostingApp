@@ -78,6 +78,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.refx.app.tests
+        TARGETED_DEVICE_FAMILY: "1" # match the app so the universal-build guard stays clean
 
 schemes:
   ReFxApp (Debug):
