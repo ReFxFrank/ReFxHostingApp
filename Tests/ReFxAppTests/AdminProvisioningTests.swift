@@ -136,6 +136,43 @@ final class AdminProvisioningTests: XCTestCase {
         XCTAssertNil(node.memoryMb)
     }
 
+    // MARK: CreateNodeBody / CreateNodeResult (POST /admin/nodes)
+
+    func testCreateNodeBodyEncodesExpectedKeys() throws {
+        let body = CreateNodeBody(
+            name: "node-eu-01", fqdn: "node-eu-01.example.com", regionId: "r_1", os: "LINUX",
+            cpuCores: 8, memoryMb: 16384, diskMb: 512000,
+            allocationPortStart: 25565, allocationPortEnd: 25999)
+        let json = try encode(body)
+        XCTAssertEqual(json["name"] as? String, "node-eu-01")
+        XCTAssertEqual(json["fqdn"] as? String, "node-eu-01.example.com")
+        XCTAssertEqual(json["regionId"] as? String, "r_1")
+        XCTAssertEqual(json["os"] as? String, "LINUX")
+        XCTAssertEqual(json["cpuCores"] as? Int, 8)
+        XCTAssertEqual(json["memoryMb"] as? Int, 16384)
+        XCTAssertEqual(json["diskMb"] as? Int, 512000)
+        XCTAssertEqual(json["allocationPortStart"] as? Int, 25565)
+        XCTAssertEqual(json["allocationPortEnd"] as? Int, 25999)
+    }
+
+    func testCreateNodeResultDecodesTokenFromFullNodePayload() throws {
+        // The response is the whole Node plus bootstrapToken — decode permissively,
+        // ignoring node fields we don't need.
+        let json = """
+        {
+          "id": "n_new", "name": "node-eu-01", "fqdn": "node-eu-01.example.com",
+          "state": "PROVISIONING", "agentVersion": null, "maintenance": false,
+          "region": { "name": "Falkenstein", "code": "EU" },
+          "memoryMb": 16384, "diskMb": 512000,
+          "bootstrapToken": "bt_abc123"
+        }
+        """
+        let result = try TestJSON.decode(CreateNodeResult.self, json)
+        XCTAssertEqual(result.id, "n_new")
+        XCTAssertEqual(result.name, "node-eu-01")
+        XCTAssertEqual(result.bootstrapToken, "bt_abc123")
+    }
+
     // MARK: CreditReason (store-credit adjust sheet)
 
     private struct ReasonWrapper: Decodable { let reason: CreditReason }

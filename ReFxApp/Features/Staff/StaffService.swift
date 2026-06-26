@@ -45,6 +45,12 @@ struct StaffService {
         try await client.send(.get("admin/nodes/\(id)"))
     }
 
+    /// Admin add-node: registers a node and returns its one-time bootstrap token
+    /// (the operator runs the installer with it). Mirrors Admin → Nodes → Add.
+    func createNode(_ body: CreateNodeBody) async throws -> CreateNodeResult {
+        try await client.send(.post("admin/nodes", body: body))
+    }
+
     func pingNode(_ id: String) async throws -> NodePing {
         try await client.send(.get("admin/nodes/\(id)/ping"))
     }

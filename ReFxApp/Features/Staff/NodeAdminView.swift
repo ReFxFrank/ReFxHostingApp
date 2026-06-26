@@ -67,6 +67,7 @@ final class NodeAdminViewModel: ObservableObject {
 struct NodeAdminView: View {
     @EnvironmentObject private var session: AppSession
     @StateObject private var model = NodeAdminViewModel()
+    @State private var showAddNode = false
 
     var body: some View {
         AsyncStateView(
@@ -79,6 +80,15 @@ struct NodeAdminView: View {
         .screenBackground()
         .navigationTitle("Node health")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showAddNode = true } label: { Image(systemName: "plus") }
+                    .accessibilityLabel("Add node")
+            }
+        }
+        .sheet(isPresented: $showAddNode) {
+            AddNodeView { Task { await model.load() } }
+        }
         .task { model.bind(session); if model.state.value == nil { await model.load() } }
     }
 
