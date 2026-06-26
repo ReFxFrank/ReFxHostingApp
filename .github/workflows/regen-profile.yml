@@ -1,0 +1,107 @@
+name: Regenerate App Store Profile
+
+# One-shot: regenerates the "ReFx App Store" provisioning profile via the App
+# Store Connect API so it picks up newly-enabled App ID capabilities (Push),
+# reusing the SAME bundle id + distribution certificate as the existing profile
+# (so the committed .p12 keeps signing). Commits the new .mobileprovision.
+#
+# Run from the Actions tab (workflow_dispatch). No Mac needed — pure REST + git.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  regen:
+    runs-on: ubuntu-latest
+    env:
+      # Non-secret identifiers (same as testflight.yml). The .p8 is the secret.
+      ASC_KEY_ID: "8V5T35NFKV"
+      ASC_ISSUER_ID: "82d15814-03ed-4912-b694-6addfbe1827e"
+      PROFILE_NAME: "ReFx App Store"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Regenerate profile via App Store Connect API
+        env:
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+        run: |
+          cat > regen.mjs <<'EOF'
+          import { createSign } from 'node:crypto';
+          import { writeFileSync } from 'node:fs';
+
+          const KEY_ID = process.env.ASC_KEY_ID;
+          const ISSUER = process.env.ASC_ISSUER_ID;
+          const NAME = process.env.PROFILE_NAME;
+          const RAW = process.env.ASC_KEY_P8_BASE64 || '';
+          const API = 'https://api.appstoreconnect.apple.com';
+
+          function pem() {
+            if (RAW.includes('BEGIN PRIVATE KEY')) return RAW;
+            return Buffer.from(RAW.replace(/\s+/g, ''), 'base64').toString('utf8');
+          }
+          const b64u = (x) => Buffer.from(x).toString('base64')
+            .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+          function token() {
+            const now = Math.floor(Date.now() / 1000);
+            const head = b64u(JSON.stringify({ alg: 'ES256', kid: KEY_ID, typ: 'JWT' }));
+            const body = b64u(JSON.stringify({ iss: ISSUER, iat: now, exp: now + 1200, aud: 'appstoreconnect-v1' }));
+            const si = head + '.' + body;
+            const s = createSign('SHA256'); s.update(si);
+            return si + '.' + b64u(s.sign({ key: pem(), dsaEncoding: 'ieee-p1363' }));
+          }
+          async function api(method, path, body) {
+            const res = await fetch(API + path, {
+              method,
+              headers: { Authorization: 'Bearer ' + token(), 'Content-Type': 'application/json' },
+              body: body ? JSON.stringify(body) : undefined,
+            });
+            const text = await res.text();
+            if (!res.ok) { console.error(method, path, '->', res.status, text); throw new Error('API ' + res.status); }
+            return text ? JSON.parse(text) : {};
+          }
+
+          const list = await api('GET',
+            `/v1/profiles?filter[name]=${encodeURIComponent(NAME)}&include=certificates,bundleId&limit=200`);
+          const profile = (list.data || []).find((p) => p.attributes.name === NAME);
+          if (!profile) throw new Error('Profile not found: ' + NAME);
+          const profileType = profile.attributes.profileType || 'IOS_APP_STORE';
+          const bundleId = profile.relationships.bundleId.data.id;
+          const certs = (profile.relationships.certificates.data || []).map((c) => c.id);
+          if (!certs.length) throw new Error('Existing profile has no certificates');
+          console.log('Existing profile', profile.id, '| type', profileType, '| bundle', bundleId, '| certs', certs.join(','));
+
+          await api('DELETE', `/v1/profiles/${profile.id}`);
+          console.log('Deleted old (invalid) profile.');
+
+          const created = await api('POST', '/v1/profiles', {
+            data: {
+              type: 'profiles',
+              attributes: { name: NAME, profileType },
+              relationships: {
+                bundleId: { data: { type: 'bundleIds', id: bundleId } },
+                certificates: { data: certs.map((id) => ({ type: 'certificates', id })) },
+              },
+            },
+          });
+          const content = created.data.attributes.profileContent;
+          if (!content) throw new Error('No profileContent returned');
+          writeFileSync('ci/ReFx_AppStore.mobileprovision', Buffer.from(content, 'base64'));
+          console.log('Wrote ci/ReFx_AppStore.mobileprovision (new id ' + created.data.id + ', name "' + NAME + '")');
+          EOF
+          node regen.mjs
+          rm -f regen.mjs
+
+      - name: Commit the regenerated profile
+        run: |
+          if git diff --quiet -- ci/ReFx_AppStore.mobileprovision; then
+            echo "Profile content unchanged — nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ci/ReFx_AppStore.mobileprovision
+          git commit -m "CI: regenerate App Store provisioning profile (adds Push capability)"
+          git push
