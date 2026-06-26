@@ -95,6 +95,11 @@ struct MFAView: View {
             // user dismissed the sheet; no-op
         } catch PasskeyAuthenticator.PasskeyError.cancelled {
             // user cancelled the passkey sheet; no-op
+        } catch PasskeyAuthenticator.PasskeyError.failed(let reason) {
+            // Surface the real reason iOS gave (domain not associated, no
+            // credential found, etc.) instead of a generic message — otherwise
+            // a misconfigured rpId/Associated-Domain is undiagnosable in the field.
+            errorMessage = "Passkey sign-in failed: \(reason)"
         } catch let error as APIError {
             errorMessage = error.userMessage
         } catch {
