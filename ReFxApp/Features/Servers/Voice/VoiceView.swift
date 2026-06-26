@@ -6,6 +6,7 @@ final class VoiceViewModel: ObservableObject {
     @Published private(set) var info: VoiceInfo?
     @Published private(set) var status: VoiceStatus?
     @Published private(set) var loaded = false
+    @Published private(set) var loadError: APIError?
     @Published var message: String?
     @Published var isError = false
 
@@ -18,7 +19,11 @@ final class VoiceViewModel: ObservableObject {
 
     func load() async {
         guard let service else { return }
-        info = try? await service.info(serverId)
+        do {
+            info = try await service.info(serverId)
+            loadError = nil
+        } catch let error as APIError { loadError = error }
+        catch { loadError = .network(isOffline: false, underlying: "\(error)") }
         status = try? await service.status(serverId)
         loaded = true
     }
@@ -56,6 +61,8 @@ struct VoiceView: View {
             VStack(spacing: 16) {
                 if !model.loaded {
                     ProgressView().tint(.appPrimary).padding(.top, 40)
+                } else if let error = model.loadError, model.info == nil {
+                    ErrorStateView(error: error, retry: { Task { await model.load() } })
                 } else {
                     if let message = model.message {
                         Text(message).font(.footnote)

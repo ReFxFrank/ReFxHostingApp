@@ -4,6 +4,7 @@ import UIKit
 @MainActor
 final class SecurityViewModel: ObservableObject {
     @Published private(set) var apiKeys: [ApiKey] = []
+    @Published private(set) var keysError: APIError?
     @Published var message: String?
     @Published var isError = false
     @Published var revealedKey: String?
@@ -20,7 +21,9 @@ final class SecurityViewModel: ObservableObject {
 
     func loadKeys() async {
         guard let service else { return }
-        if let keys = try? await service.apiKeys() { apiKeys = keys }
+        do { apiKeys = try await service.apiKeys(); keysError = nil }
+        catch let error as APIError { keysError = error }
+        catch { keysError = .network(isOffline: false, underlying: "\(error)") }
     }
 
     func disableTotp() async {
@@ -87,7 +90,13 @@ struct SecurityView: View {
             .listRowBackground(Color.appCard)
 
             Section {
-                if model.apiKeys.isEmpty {
+                if let error = model.keysError {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(error.userMessage).font(.footnote).foregroundStyle(.appDestructive)
+                        Button("Try again") { Task { await model.loadKeys() } }
+                            .font(.footnote.weight(.semibold)).foregroundStyle(.appPrimary)
+                    }
+                } else if model.apiKeys.isEmpty {
                     Text("No API keys.").font(.footnote).foregroundStyle(.appMuted)
                 }
                 ForEach(model.apiKeys) { key in
