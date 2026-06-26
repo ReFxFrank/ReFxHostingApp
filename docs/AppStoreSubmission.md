@@ -4,7 +4,7 @@ Everything needed to put ReFx on the App Store. The code-side items are done
 (privacy manifest, encryption declaration, purchasing gate). The rest is
 copy-paste into App Store Connect plus screenshots you capture from the device.
 
-Bundle ID: `com.refx.app` · Team: `FM8Z8BA64H` · Min iOS 16 · iPhone + iPad.
+Bundle ID: `com.refx.app` · Team: `FM8Z8BA64H` · Min iOS 16 · iPhone only.
 
 ---
 
@@ -150,11 +150,12 @@ Drafts — tune to taste. Character limits noted.
 
 ## 6. Screenshots  → you capture these
 
-Required sets (App Store Connect accepts the largest size per device and
-down-scales):
+The app ships **iPhone-only** for launch (`TARGETED_DEVICE_FAMILY = "1"`), so
+only one screenshot set is required:
 - **iPhone 6.9"** (e.g. 15/16 Pro Max) — 1320 × 2868. Required.
-- **iPad 13"** (universal app) — 2064 × 2752. Required because the app
-  targets iPad too.
+
+(No iPad set needed. iPad support is deferred to a later version; until then the
+app runs on iPad in iPhone-compatibility mode.)
 
 Suggested 5–6 shots, in order: Servers list (with a couple of servers) →
 Server detail → Live console → Files or Backups → Billing/invoices →
@@ -171,7 +172,7 @@ the simulator (Cmd-S in the simulator saves a correctly-sized PNG).
 - [ ] Demo account created (customer, 2FA off, has a server) and entered in
       Sign-In Information
 - [ ] Review notes from §3 pasted
-- [ ] Screenshots uploaded (iPhone 6.9" + iPad 13")
+- [ ] Screenshots uploaded (iPhone 6.9" — iPhone-only app, no iPad set needed)
 - [ ] Name / subtitle / keywords / description entered
 - [ ] Build selected (the auto-uploaded TestFlight build)
 - [ ] Export compliance — nothing to do (exempt), confirm no prompt
