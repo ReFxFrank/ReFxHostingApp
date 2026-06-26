@@ -28,6 +28,7 @@ final class DatabasesViewModel: ObservableObject {
         actionError = nil
         do {
             let db = try await service.create(serverId, engine: engine, name: name, remoteAccess: remoteAccess)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
             if let pw = db.password { revealedPassword = (db.name, pw) }
             await load()
         } catch let error as APIError { actionError = error.userMessage }
@@ -47,7 +48,11 @@ final class DatabasesViewModel: ObservableObject {
     func delete(_ db: ServerDatabase) async {
         guard let service else { return }
         actionError = nil
-        do { try await service.delete(serverId, dbId: db.id); await load() }
+        do {
+            try await service.delete(serverId, dbId: db.id)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            await load()
+        }
         catch let error as APIError { actionError = error.userMessage }
         catch { actionError = "Couldn't delete the database." }
     }

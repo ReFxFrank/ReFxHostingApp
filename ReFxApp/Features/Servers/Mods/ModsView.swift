@@ -47,6 +47,7 @@ final class ModsViewModel: ObservableObject {
         message = nil
         do {
             try await service.install(serverId, projectId: mod.projectId)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
             flash("Installed \(mod.title).", error: false)
             await loadInstalled()
         } catch let error as APIError { flash(error.userMessage, error: true) }
@@ -55,7 +56,11 @@ final class ModsViewModel: ObservableObject {
 
     func remove(_ mod: InstalledMod) async {
         guard let service else { return }
-        do { try await service.remove(serverId, filename: mod.name); await loadInstalled() }
+        do {
+            try await service.remove(serverId, filename: mod.name)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            await loadInstalled()
+        }
         catch { flash("Couldn't remove \(mod.name).", error: true) }
     }
 

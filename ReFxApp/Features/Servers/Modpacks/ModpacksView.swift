@@ -1,15 +1,19 @@
 import SwiftUI
+import UIKit
 
 @MainActor
 final class ModpacksViewModel: ObservableObject {
     @Published var query = ""
-    @Published private(set) var results: [ModSearchResult] = []
+    @Published private(set) var state: LoadState<[ModSearchResult]> = .idle
     @Published private(set) var installed: InstalledModpack?
     @Published var isSearching = false
     @Published var message: String?
     @Published var isError = false
     /// True while showing the default popular list (no active query).
     @Published private(set) var isFeatured = true
+
+    /// The current result list (empty until loaded).
+    var results: [ModSearchResult] { state.value ?? [] }
 
     @Published var versionsFor: ModSearchResult?
     @Published private(set) var versions: [ModpackVersion] = []
@@ -35,7 +39,10 @@ final class ModpacksViewModel: ObservableObject {
         isSearching = true
         defer { isSearching = false }
         isFeatured = true
-        results = (try? await service.search(serverId, query: "")) ?? []
+        if state.value == nil { state = .loading }
+        do { state = .loaded(try await service.search(serverId, query: "")) }
+        catch let error as APIError { state = .failed(error) }
+        catch { state = .failed(.network(isOffline: false, underlying: "\(error)")) }
     }
 
     func search() async {
@@ -45,8 +52,20 @@ final class ModpacksViewModel: ObservableObject {
         isSearching = true
         defer { isSearching = false }
         isFeatured = false
-        do { results = try await service.search(serverId, query: q) }
-        catch { flash("Search failed.", error: true) }
+        if state.value == nil { state = .loading }
+        do { state = .loaded(try await service.search(serverId, query: q)) }
+        catch let error as APIError { state = .failed(error) }
+        catch { state = .failed(.network(isOffline: false, underlying: "\(error)")) }
+    }
+
+    /// Reload the current view (featured list or active query) for pull-to-refresh.
+    func refresh() async {
+        if isFeatured {
+            isFeatured = false // force re-fetch even if a featured list is on screen
+            await loadFeatured()
+        } else {
+            await search()
+        }
     }
 
     func openVersions(_ pack: ModSearchResult) async {
@@ -65,6 +84,7 @@ final class ModpacksViewModel: ObservableObject {
         message = nil
         do {
             try await service.install(serverId, versionId: version.id)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
             versionsFor = nil
             flash("Modpack install queued — the server will reinstall.", error: false)
             await loadInstalled()
@@ -74,7 +94,12 @@ final class ModpacksViewModel: ObservableObject {
 
     func uninstall() async {
         guard let service else { return }
-        do { try await service.uninstall(serverId); flash("Modpack removed.", error: false); await loadInstalled() }
+        do {
+            try await service.uninstall(serverId)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            flash("Modpack removed.", error: false)
+            await loadInstalled()
+        }
         catch let error as APIError { flash(error.userMessage, error: true) }
         catch { flash("Couldn't remove.", error: true) }
     }
@@ -101,23 +126,11 @@ struct ModpacksView: View {
                 }
                 searchBar
 
-                if !model.results.isEmpty {
-                    SectionHeader(model.isFeatured ? "Popular modpacks" : "Results",
-                                  systemImage: model.isFeatured ? "flame.fill" : "magnifyingglass")
-                        .padding(.horizontal, 4).padding(.top, 2)
-                } else if model.isSearching {
-                    ProgressView().tint(.appPrimary).frame(maxWidth: .infinity).padding(.top, 24)
-                }
-
-                ForEach(model.results) { pack in
-                    Button { Task { await model.openVersions(pack) } } label: {
-                        ModResultRow(mod: pack, installing: false, onInstall: { Task { await model.openVersions(pack) } })
-                    }
-                    .buttonStyle(.plain)
-                }
+                resultsSection
             }
             .padding(16)
         }
+        .refreshable { await model.refresh() }
         .screenBackground()
         .navigationTitle("Modpacks")
         .navigationBarTitleDisplayMode(.inline)
@@ -126,6 +139,33 @@ struct ModpacksView: View {
                           installingId: model.installingVersionId) { v in Task { await model.install(v) } }
         }
         .task { model.bind(session); await model.loadInstalled(); await model.loadFeatured() }
+    }
+
+    @ViewBuilder
+    private var resultsSection: some View {
+        switch model.state {
+        case .idle, .loading:
+            VStack(spacing: 10) { ForEach(0..<5, id: \.self) { _ in SkeletonBlock(height: 76) } }
+                .padding(.top, 2)
+        case .failed(let error):
+            ErrorStateView(error: error, retry: { Task { await model.refresh() } })
+        case .loaded(let packs):
+            if packs.isEmpty {
+                EmptyStateView(title: model.isFeatured ? "No modpacks" : "No results",
+                               message: model.isFeatured ? "No popular modpacks to show right now."
+                                                          : "Try a different search term.")
+            } else {
+                SectionHeader(model.isFeatured ? "Popular modpacks" : "Results",
+                              systemImage: model.isFeatured ? "flame.fill" : "magnifyingglass")
+                    .padding(.horizontal, 4).padding(.top, 2)
+                ForEach(packs) { pack in
+                    Button { Task { await model.openVersions(pack) } } label: {
+                        ModResultRow(mod: pack, installing: false, onInstall: { Task { await model.openVersions(pack) } })
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
     }
 
     private var searchBar: some View {

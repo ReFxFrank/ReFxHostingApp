@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 @MainActor
 final class FilesBrowserViewModel: ObservableObject {
@@ -48,7 +49,7 @@ final class FilesBrowserViewModel: ObservableObject {
 
     func delete(_ entry: FileEntry) async {
         guard let service, let serverId else { return }
-        await run { try await service.delete(serverId, paths: [entry.path]) }
+        await run(haptic: true) { try await service.delete(serverId, paths: [entry.path]) }
     }
 
     func rename(_ entry: FileEntry, to newName: String) async {
@@ -63,10 +64,11 @@ final class FilesBrowserViewModel: ObservableObject {
     }
 
     /// Run a mutation then reload; surface errors in `actionError`.
-    private func run(_ work: () async throws -> Void) async {
+    private func run(haptic: Bool = false, _ work: () async throws -> Void) async {
         actionError = nil
         do {
             try await work()
+            if haptic { UINotificationFeedbackGenerator().notificationOccurred(.success) }
             await load()
         } catch let error as APIError {
             actionError = error.userMessage

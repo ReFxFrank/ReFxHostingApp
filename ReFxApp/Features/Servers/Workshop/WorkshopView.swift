@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 @MainActor
 final class WorkshopViewModel: ObservableObject {
@@ -24,7 +25,7 @@ final class WorkshopViewModel: ObservableObject {
     func add(_ input: String) async {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        await run { try await $0.add(self.serverId, input: trimmed) }
+        await run(haptic: true) { try await $0.add(self.serverId, input: trimmed) }
     }
 
     func toggle(_ mod: WorkshopMod) async {
@@ -32,7 +33,7 @@ final class WorkshopViewModel: ObservableObject {
     }
 
     func remove(_ mod: WorkshopMod) async {
-        await run { try await $0.remove(self.serverId, modId: mod.id) }
+        await run(haptic: true) { try await $0.remove(self.serverId, modId: mod.id) }
     }
 
     func apply() async {
@@ -40,15 +41,22 @@ final class WorkshopViewModel: ObservableObject {
         actionError = nil
         isApplying = true
         defer { isApplying = false }
-        do { try await service.apply(serverId) }
+        do {
+            try await service.apply(serverId)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
         catch let error as APIError { actionError = error.userMessage }
         catch { actionError = "Couldn't apply changes." }
     }
 
-    private func run(_ work: (WorkshopService) async throws -> Void) async {
+    private func run(haptic: Bool = false, _ work: (WorkshopService) async throws -> Void) async {
         guard let service else { return }
         actionError = nil
-        do { try await work(service); await load() }
+        do {
+            try await work(service)
+            if haptic { UINotificationFeedbackGenerator().notificationOccurred(.success) }
+            await load()
+        }
         catch let error as APIError { actionError = error.userMessage }
         catch { actionError = "Action failed. Try again." }
     }
