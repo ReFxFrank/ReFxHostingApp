@@ -71,6 +71,36 @@ struct AdminCreateServerBody: Encodable {
     var environment: [String: String]? = nil
 }
 
+/// Operating system a node runs (drives the runtime backend choice server-side).
+enum NodeOS: String, CaseIterable, Identifiable {
+    case linux = "LINUX"
+    case windows = "WINDOWS"
+    var id: String { rawValue }
+    var label: String { self == .linux ? "Linux" : "Windows" }
+}
+
+/// Body for `POST /admin/nodes` (admin add-node). The agent installs against the
+/// returned one-time bootstrap token. Port range + resources have panel defaults.
+struct CreateNodeBody: Encodable {
+    let name: String
+    let fqdn: String
+    let regionId: String
+    let os: String
+    let cpuCores: Int
+    let memoryMb: Int
+    let diskMb: Int
+    let allocationPortStart: Int
+    let allocationPortEnd: Int
+}
+
+/// Response of `POST /admin/nodes`: the created node plus a one-time bootstrap
+/// token (shown to the operator once — it can't be retrieved again).
+struct CreateNodeResult: Decodable {
+    let id: String?
+    let name: String?
+    let bootstrapToken: String
+}
+
 // MARK: - Users (admin)
 
 /// `GET /admin/users` (admin list row).
