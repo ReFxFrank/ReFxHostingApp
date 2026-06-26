@@ -6,7 +6,7 @@ is accurate to the **public App Store build**, where in-app purchasing/plan
 changes are disabled (billing is view-only; payments happen on the web) — so the
 description never claims a feature a reviewer can't see.
 
-Bundle ID: `com.refx.app` · Free · Min iOS 16 · iPhone + iPad.
+Bundle ID: `com.refx.app` · Free · Min iOS 16 · iPhone only.
 
 ---
 
@@ -156,8 +156,11 @@ address (billing), Device ID (push token), Customer-support content — all
 ---
 
 ## F. Screenshots  → you capture these (specs only, no copy)
+
+The app ships **iPhone-only** for launch, so only one set is required:
 - **iPhone 6.9"** (15/16 Pro Max) — 1320 × 2868. **Required.**
-- **iPad 13"** — 2064 × 2752. **Required** (universal app).
+
+*(No iPad set needed — iPad support is deferred to a later version.)*
 
 Suggested order, captured on the demo account so they're populated: Servers list
 → Server detail (status + gauges) → Live console → Files or Backups → Billing /

@@ -20,7 +20,7 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     SWIFT_VERSION: "5.9"
     DEVELOPMENT_LANGUAGE: en
-    TARGETED_DEVICE_FAMILY: "1,2" # iPhone + iPad
+    TARGETED_DEVICE_FAMILY: "1" # iPhone only (iPad support deferred to a later version)
 
 targets:
   ReFxApp:
