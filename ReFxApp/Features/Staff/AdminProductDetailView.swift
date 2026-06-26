@@ -124,14 +124,16 @@ struct AdminProductDetailView: View {
             // Product-level prices
             section(title: "Product prices", systemImage: "dollarsign.circle",
                     trailing: { Button { priceTarget = .init(id: product.id, tierId: nil, title: "Product price") }
-                        label: { Image(systemName: "plus.circle") }.foregroundStyle(.appPrimary) }) {
+                        label: { Image(systemName: "plus.circle") }.foregroundStyle(.appPrimary)
+                        .accessibilityLabel("Add price") }) {
                 priceList(product.prices ?? [], emptyText: "No product-level prices.")
             }
 
             // Hardware tiers
             section(title: "Hardware tiers", systemImage: "cpu",
                     trailing: { Button { showAddTier = true } label: { Image(systemName: "plus.circle") }
-                        .foregroundStyle(.appPrimary) }) {
+                        .foregroundStyle(.appPrimary)
+                        .accessibilityLabel("Add tier") }) {
                 let tiers = product.hardwareTiers ?? []
                 if tiers.isEmpty {
                     Text("No tiers yet.").font(.caption).foregroundStyle(.appMuted)
@@ -187,6 +189,7 @@ private struct PriceRow: View {
             Spacer()
             Button { confirm = true } label: { Image(systemName: "trash").font(.caption) }
                 .foregroundStyle(.appDestructive)
+                .accessibilityLabel("Delete price")
         }
         .padding(10)
         .background(Color.appCard, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -211,8 +214,10 @@ private struct TierCard: View {
                 if tier.isRecommended { StatusChip(text: "Recommended", color: .appSuccess) }
                 Spacer()
                 Button { onAddPrice() } label: { Image(systemName: "plus.circle") }.foregroundStyle(.appPrimary)
+                    .accessibilityLabel("Add price")
                 Button { confirmDelete = true } label: { Image(systemName: "trash").font(.caption) }
                     .foregroundStyle(.appDestructive)
+                    .accessibilityLabel("Delete tier")
             }
             Text("\(tier.cpuCores, specifier: "%.1f") vCPU · \(tier.memoryMb / 1024)GB RAM · \(tier.diskMb / 1024)GB disk")
                 .font(.caption2).foregroundStyle(.appMuted)
@@ -224,6 +229,7 @@ private struct TierCard: View {
                     Spacer()
                     Button { onDeletePrice(price) } label: { Image(systemName: "minus.circle").font(.caption2) }
                         .foregroundStyle(.appDestructive)
+                        .accessibilityLabel("Delete price")
                 }
             }
         }

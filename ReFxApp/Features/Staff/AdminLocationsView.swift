@@ -62,6 +62,7 @@ struct AdminLocationsView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showCreate = true } label: { Image(systemName: "plus") }
+                    .accessibilityLabel("Add location")
             }
         }
         .sheet(isPresented: $showCreate) {

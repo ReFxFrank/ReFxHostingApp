@@ -80,6 +80,7 @@ struct VoiceView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { newName = ""; showRename = true } label: { Image(systemName: "pencil") }
+                    .accessibilityLabel("Rename voice server")
             }
         }
         .alert("Rename server", isPresented: $showRename) {

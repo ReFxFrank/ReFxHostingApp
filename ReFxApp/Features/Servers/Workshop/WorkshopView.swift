@@ -75,7 +75,8 @@ struct WorkshopView: View {
         .navigationTitle("Workshop")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) { Button { input = ""; showAdd = true } label: { Image(systemName: "plus") } }
+            ToolbarItem(placement: .topBarTrailing) { Button { input = ""; showAdd = true } label: { Image(systemName: "plus") }
+                .accessibilityLabel("Add item") }
         }
         .alert("Add Workshop item", isPresented: $showAdd) {
             TextField("ID or Steam Workshop URL", text: $input)

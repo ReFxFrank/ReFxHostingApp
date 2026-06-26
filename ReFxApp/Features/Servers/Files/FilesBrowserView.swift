@@ -38,6 +38,7 @@ struct FilesBrowserView: View {
                 Button { newFolderName = ""; showNewFolder = true } label: {
                     Image(systemName: "folder.badge.plus")
                 }
+                .accessibilityLabel("New folder")
             }
         }
         .alert("New folder", isPresented: $showNewFolder) {

@@ -66,6 +66,7 @@ struct SessionsView: View {
                         } label: {
                             Image(systemName: "xmark.circle.fill").foregroundStyle(.appDestructive)
                         }
+                        .accessibilityLabel("Revoke session")
                     }
                     .padding(Theme.cardPadding)
                     .cardSurface()

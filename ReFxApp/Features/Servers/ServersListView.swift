@@ -25,6 +25,7 @@ struct ServersListView: View {
                 if FeatureFlags.purchasingEnabled {
                     ToolbarItem(placement: .topBarTrailing) {
                         NavigationLink { NewServerView() } label: { Image(systemName: "plus") }
+                            .accessibilityLabel("New server")
                     }
                 }
             }
