@@ -74,6 +74,15 @@ jobs:
       - name: Generate Xcode project (lean spec)
         run: xcodegen generate --spec project-testflight.yml
 
+      - name: Assert iPhone-only device family
+        run: |
+          if grep -Eq 'TARGETED_DEVICE_FAMILY = "?1,2"?' ReFxApp.xcodeproj/project.pbxproj; then
+            echo "::error::Generated project is universal (TARGETED_DEVICE_FAMILY 1,2) — expected iPhone-only"
+            grep -n 'TARGETED_DEVICE_FAMILY' ReFxApp.xcodeproj/project.pbxproj
+            exit 1
+          fi
+          echo "✅ iPhone-only device family confirmed"
+
       - name: Write App Store Connect API key
         env:
           ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
