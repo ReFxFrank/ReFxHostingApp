@@ -11,6 +11,7 @@ final class AppSession: ObservableObject {
         case loading
         case signedOut
         case locked            // authenticated but app-lock (Face ID) engaged
+        case offline           // valid session, but bootstrap couldn't reach the server — retryable
         case signedIn(CurrentUser)
     }
 
@@ -158,15 +159,10 @@ final class AppSession: ObservableObject {
         } catch APIError.unauthorized {
             await handleSessionExpired()
         } catch {
-            // Network hiccup on bootstrap: keep the session but show signed-out
-            // so the user can retry rather than being stuck on a spinner. The
-            // tokens remain in Keychain for the next attempt.
-            if await authStore.hasSession {
-                // Surface a retryable signed-out state.
-                phase = .signedOut
-            } else {
-                phase = .signedOut
-            }
+            // Network hiccup on bootstrap (not an auth failure). If we still hold
+            // a valid session, show a retryable "offline" screen instead of the
+            // login screen — the tokens remain in Keychain for the retry.
+            phase = await authStore.hasSession ? .offline : .signedOut
         }
     }
 

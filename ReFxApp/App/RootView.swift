@@ -15,6 +15,8 @@ struct RootView: View {
                 LoginView()
             case .locked:
                 AppLockView()
+            case .offline:
+                OfflineView()
             case .signedIn(let user):
                 MainTabView(user: user)
             }
@@ -28,6 +30,37 @@ struct LaunchView: View {
         ZStack {
             Color.appBackground.ignoresSafeArea()
             ProgressView().tint(.appPrimary)
+        }
+    }
+}
+
+/// Shown when we hold a valid session but couldn't reach the server at launch
+/// (offline / server unreachable). Preserves the session and offers a retry,
+/// plus a sign-out escape — never silently dumps the user back to login.
+struct OfflineView: View {
+    @EnvironmentObject private var session: AppSession
+    @State private var retrying = false
+
+    var body: some View {
+        ZStack {
+            Color.appBackground.ignoresSafeArea()
+            VStack(spacing: 18) {
+                Image(systemName: "wifi.exclamationmark").font(.system(size: 48)).foregroundStyle(.appWarning)
+                Text("Can’t reach ReFx").font(.headline).foregroundStyle(.appForeground)
+                Text("You’re still signed in — we just couldn’t connect. Check your connection and try again.")
+                    .font(.subheadline).foregroundStyle(.appMuted)
+                    .multilineTextAlignment(.center).padding(.horizontal, 32)
+                Button {
+                    retrying = true
+                    Task { await session.start(); retrying = false }
+                } label: {
+                    HStack { if retrying { ProgressView() }; Text(retrying ? "Connecting…" : "Try again") }
+                }
+                .buttonStyle(.refxPrimary(fullWidth: false)).disabled(retrying)
+                Button("Sign out") { Task { await session.logout() } }
+                    .font(.footnote).tint(.appMuted)
+            }
+            .padding(24)
         }
     }
 }
