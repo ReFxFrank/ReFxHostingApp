@@ -177,10 +177,15 @@ private struct OpenInvoiceCard: View {
                     Spacer()
                     Text(invoice.outstanding.formatted).font(.subheadline.weight(.bold)).foregroundStyle(.appForeground)
                 }
-                Button(action: onPay) {
-                    HStack { if busy { ProgressView() }; Text(busy ? "Processing…" : "Pay now") }
+                // In-app card payment is disabled on public App Store builds
+                // (Guideline 3.1.3 — invoices are settled on the web there); the
+                // invoice stays visible, only the pay action is withheld.
+                if FeatureFlags.purchasingEnabled {
+                    Button(action: onPay) {
+                        HStack { if busy { ProgressView() }; Text(busy ? "Processing…" : "Pay now") }
+                    }
+                    .buttonStyle(.refxPrimary).disabled(busy)
                 }
-                .buttonStyle(.refxPrimary).disabled(busy)
             }
         }
     }

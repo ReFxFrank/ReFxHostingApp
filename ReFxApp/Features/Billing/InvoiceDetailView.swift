@@ -100,7 +100,10 @@ struct InvoiceDetailView: View {
                 paymentsCard(payments)
             }
 
-            if invoice.isOpen {
+            // In-app card payment is disabled on public App Store builds
+            // (Guideline 3.1.3 — invoices are settled on the web there); the full
+            // invoice stays viewable, only the pay action is withheld.
+            if invoice.isOpen && FeatureFlags.purchasingEnabled {
                 Button(action: { Task { await model.pay() } }) {
                     HStack { if model.isPaying { ProgressView() }
                         Text(model.isPaying ? "Processing…" : "Pay \(invoice.outstanding.formatted)") }
