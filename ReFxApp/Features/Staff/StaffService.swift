@@ -25,6 +25,14 @@ struct StaffService {
         try await client.sendVoid(.delete("admin/servers/\(id)"))
     }
 
+    /// Admin direct-provision: create a server for any owner on a chosen node from
+    /// a game template, sizing by explicit resources or by slot count (voice).
+    /// Mirrors the panel's Admin → Servers → Create. Returns the new server.
+    @discardableResult
+    func createServer(_ body: AdminCreateServerBody) async throws -> Server {
+        try await client.send(.post("admin/servers", body: body))
+    }
+
     // MARK: Nodes
 
     func nodes() async throws -> [NodeAdmin] {

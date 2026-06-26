@@ -54,6 +54,23 @@ struct NodePing: Decodable {
 
 struct AgentLatest: Decodable { let latest: String? }
 
+/// Body for `POST /admin/servers` (admin direct-provision). `name`, `ownerId`,
+/// `nodeId`, `templateId` are required; resources default to the template's
+/// recommended spec when omitted. Send `slots` for voice/slot-based templates
+/// (resources auto-size server-side) instead of cpu/memory/disk.
+struct AdminCreateServerBody: Encodable {
+    let name: String
+    let ownerId: String
+    let nodeId: String
+    let templateId: String
+    var cpuCores: Double? = nil
+    var memoryMb: Int? = nil
+    var diskMb: Int? = nil
+    var slots: Int? = nil
+    var swapMb: Int? = nil
+    var environment: [String: String]? = nil
+}
+
 // MARK: - Users (admin)
 
 /// `GET /admin/users` (admin list row).
