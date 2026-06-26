@@ -74,7 +74,8 @@ final class AdminCreateServerViewModel: ObservableObject {
         guard owner != nil, nodeId != nil, templateId != nil,
               !name.trimmingCharacters(in: .whitespaces).isEmpty, !submitting else { return false }
         if sizeBySlots { return slots > 0 }
-        return Double(cpuText) != nil && Int(memoryText) != nil && Int(diskText) != nil
+        guard let cpu = Double(cpuText), let mem = Int(memoryText), let disk = Int(diskText) else { return false }
+        return cpu > 0 && mem > 0 && disk > 0
     }
 
     func nodeName(_ id: String?) -> String {
