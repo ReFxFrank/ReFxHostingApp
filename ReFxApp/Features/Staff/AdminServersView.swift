@@ -24,6 +24,7 @@ final class AdminServersViewModel: ObservableObject {
 struct AdminServersView: View {
     @EnvironmentObject private var session: AppSession
     @StateObject private var model = AdminServersViewModel()
+    @State private var showCreate = false
 
     var body: some View {
         AsyncStateView(
@@ -36,8 +37,17 @@ struct AdminServersView: View {
         .screenBackground()
         .navigationTitle("Server admin")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showCreate = true } label: { Image(systemName: "plus") }
+                    .accessibilityLabel("Create server")
+            }
+        }
         .searchable(text: $model.searchText, prompt: "Search all servers")
         .onSubmit(of: .search) { Task { await model.load() } }
+        .sheet(isPresented: $showCreate) {
+            AdminCreateServerView { Task { await model.refresh() } }
+        }
         .task { model.bind(session); if model.state.value == nil { await model.load() } }
     }
 
