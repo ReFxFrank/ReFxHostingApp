@@ -114,9 +114,7 @@ private struct PrivacyCurtain: View {
     var body: some View {
         ZStack {
             Color.appBackground.ignoresSafeArea()
-            Image(systemName: "bolt.horizontal.circle.fill")
-                .font(.system(size: 48, weight: .semibold))
-                .foregroundStyle(.appPrimary)
+            BrandMark(size: 96)
         }
     }
 }
