@@ -59,7 +59,13 @@ final class BackgroundRefreshScheduler {
         guard await auth.hasSession else { return }
         await client.configure(
             tokenProvider: { await auth.currentAccessToken() },
-            refreshHandler: { await auth.refreshIfPossible() })
+            // Deliberately do NOT refresh here. Refresh rotates the token, and this
+            // throwaway AuthStore can't keep the foreground session's in-memory
+            // token in sync — a later foreground refresh with the now-stale token
+            // would trip family-reuse detection and revoke the whole session. Run
+            // best-effort on the current access token; if it's expired this cycle
+            // simply does nothing and the next foreground use refreshes normally.
+            refreshHandler: { false })
 
         let servers = ServersService(client: client)
         let account = AccountService(client: client)
