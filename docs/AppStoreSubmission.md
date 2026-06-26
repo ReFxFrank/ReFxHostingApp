@@ -117,9 +117,14 @@ Drafts — tune to taste. Character limits noted.
   ReFx is a free companion to your existing hosting account. Sign in and your
   servers are right there.
   ```
-- **Support URL:** `https://refx.gg/support` (confirm/replace)
+- **Support URL:** `https://refx.gg/support`
 - **Marketing URL:** `https://refx.gg` (optional)
-- **Privacy Policy URL:** required — must be a real, reachable page.
+- **Privacy Policy URL:** `https://refx.gg/privacy` (required — must be live)
+
+> These same pages are now linked in-app under **Account ▸ About & legal**
+> (Privacy Policy, Terms of Service, Help & Support), opened relative to the
+> configured web origin (`/privacy`, `/terms`, `/support`). If any of those
+> paths differ on the live site, tell me and I'll adjust the links.
 - **Category:** Primary `Utilities` (or `Developer Tools`); Secondary optional.
 - **Age rating:** 4+ (no objectionable content). Answer the questionnaire all
   "None."
