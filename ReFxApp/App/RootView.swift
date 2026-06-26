@@ -90,12 +90,27 @@ struct MainTabView: View {
         // to the exact server/invoice/ticket via the router's id targets.
         .onChange(of: pushRouter.tab) { intent in
             guard let intent else { return }
-            switch intent {
-            case .servers: tab = .servers
-            case .billing: tab = .account
-            case .support: tab = .support
-            }
-            pushRouter.tab = nil
+            apply(intent)
         }
+        // Cold launch: a notification tap routes through PushRouter before this
+        // view exists, so `tab` is already set by the time it appears and
+        // onChange never fires. Apply any pending route on appear. Deferred to
+        // the next runloop so the TabView honours the selection change.
+        .onAppear {
+            guard let intent = pushRouter.tab else { return }
+            DispatchQueue.main.async { apply(intent) }
+        }
+    }
+
+    /// Switch to the tab a push intent targets, then clear it so it isn't
+    /// re-applied. The id targets (serverId/invoiceId/ticketId) persist until
+    /// the destination is dismissed, so the tab root still deep-pushes.
+    private func apply(_ intent: PushTab) {
+        switch intent {
+        case .servers: tab = .servers
+        case .billing: tab = .account
+        case .support: tab = .support
+        }
+        pushRouter.tab = nil
     }
 }
