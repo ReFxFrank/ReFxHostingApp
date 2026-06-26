@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AccountView: View {
     @EnvironmentObject private var session: AppSession
+    @EnvironmentObject private var pushRouter: PushRouter
 
     var body: some View {
         NavigationStack {
@@ -62,6 +63,11 @@ struct AccountView: View {
             .scrollContentBackground(.hidden)
             .screenBackground()
             .navigationTitle("Account")
+            .navigationDestination(isPresented: Binding(
+                get: { pushRouter.invoiceId != nil },
+                set: { if !$0 { pushRouter.invoiceId = nil } })) {
+                if let id = pushRouter.invoiceId { InvoiceDetailView(invoiceId: id) }
+            }
         }
     }
 }

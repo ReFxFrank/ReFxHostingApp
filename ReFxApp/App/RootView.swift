@@ -86,17 +86,16 @@ struct MainTabView: View {
                 .badge(session.unreadCount)
                 .tag(Tab.account)
         }
-        // A tapped push selects the relevant tab. (Deep-pushing to the exact
-        // server/invoice/ticket is a follow-up once the NavigationStacks expose
-        // a path; selecting the section is the v1 behavior.)
-        .onChange(of: pushRouter.pending) { route in
-            guard let route else { return }
-            switch route {
-            case .server: tab = .servers
+        // A tapped push selects the relevant tab; each tab root then deep-pushes
+        // to the exact server/invoice/ticket via the router's id targets.
+        .onChange(of: pushRouter.tab) { intent in
+            guard let intent else { return }
+            switch intent {
+            case .servers: tab = .servers
             case .billing: tab = .account
             case .support: tab = .support
             }
-            pushRouter.pending = nil
+            pushRouter.tab = nil
         }
     }
 }

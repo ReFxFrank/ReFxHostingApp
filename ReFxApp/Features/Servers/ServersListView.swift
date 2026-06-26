@@ -4,6 +4,7 @@ import SwiftUI
 /// suspended / crashed servers are surfaced loudly at the top.
 struct ServersListView: View {
     @EnvironmentObject private var session: AppSession
+    @EnvironmentObject private var pushRouter: PushRouter
     @StateObject private var model = ServersListViewModel()
 
     var body: some View {
@@ -30,6 +31,11 @@ struct ServersListView: View {
             .searchable(text: $model.searchText, prompt: "Search servers")
             .onSubmit(of: .search) { Task { await model.load() } }
             .refreshable { await model.refresh() }
+            .navigationDestination(isPresented: Binding(
+                get: { pushRouter.serverId != nil },
+                set: { if !$0 { pushRouter.serverId = nil } })) {
+                if let id = pushRouter.serverId { ServerDetailView(serverId: id, preview: nil) }
+            }
         }
         .task {
             model.bind(session.servers)

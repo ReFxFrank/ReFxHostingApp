@@ -24,6 +24,7 @@ final class SupportListViewModel: ObservableObject {
 /// Support tab: the customer's tickets, with create + thread/reply.
 struct SupportListView: View {
     @EnvironmentObject private var session: AppSession
+    @EnvironmentObject private var pushRouter: PushRouter
     @StateObject private var model = SupportListViewModel()
     @State private var showCreate = false
 
@@ -46,6 +47,11 @@ struct SupportListView: View {
             }
             .sheet(isPresented: $showCreate) {
                 CreateTicketView { await model.refresh() }
+            }
+            .navigationDestination(isPresented: Binding(
+                get: { pushRouter.ticketId != nil },
+                set: { if !$0 { pushRouter.ticketId = nil } })) {
+                if let id = pushRouter.ticketId { TicketDetailView(ticketId: id, subject: "Ticket") }
             }
             .task { model.bind(session); if model.state.value == nil { await model.load() } }
         }

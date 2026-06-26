@@ -8,28 +8,33 @@ import UIKit
 // the backend exposes the device-token endpoint. Once those are in place it
 // activates with no further app changes.
 
-/// Where a tapped notification should take the user.
-enum PushRoute: Equatable {
-    case server(String)
-    case billing
-    case support(String?)
-}
+/// Which tab a tapped push should select.
+enum PushTab: Hashable { case servers, billing, support }
 
-/// Published target for a tapped push; observed by the tab tree to navigate.
+/// Published navigation intent for a tapped push. `tab` switches the tab; the
+/// id targets drive a deep push into the exact entity within that tab's stack
+/// (each tab root consumes its own id via `.navigationDestination`).
 @MainActor
 final class PushRouter: ObservableObject {
     static let shared = PushRouter()
-    @Published var pending: PushRoute?
+    @Published var tab: PushTab?
+    @Published var serverId: String?
+    @Published var invoiceId: String?
+    @Published var ticketId: String?
     private init() {}
 
-    func route(type rawType: String?, serverId: String?, ticketId: String?) {
+    func route(type rawType: String?, serverId: String?, invoiceId: String?, ticketId: String?) {
         let type = (rawType ?? "").lowercased()
-        if type.contains("server"), let serverId { pending = .server(serverId); return }
-        if type.contains("invoice") || type.contains("billing") || type.contains("payment") {
-            pending = .billing; return
+        if type.contains("server"), let serverId {
+            self.serverId = serverId; tab = .servers; return
         }
-        if type.contains("ticket") || type.contains("support") { pending = .support(ticketId); return }
-        if let serverId { pending = .server(serverId) }   // fall back to a server route if an id is present
+        if type.contains("invoice") || type.contains("billing") || type.contains("payment") {
+            self.invoiceId = invoiceId; tab = .billing; return   // invoiceId may be nil -> just the tab
+        }
+        if type.contains("ticket") || type.contains("support") {
+            self.ticketId = ticketId; tab = .support; return
+        }
+        if let serverId { self.serverId = serverId; tab = .servers }   // fall back if an id is present
     }
 }
 
@@ -127,9 +132,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         let info = response.notification.request.content.userInfo
         let type = info["type"] as? String
         let serverId = info["serverId"] as? String
+        let invoiceId = info["invoiceId"] as? String
         let ticketId = info["ticketId"] as? String
         Task { @MainActor in
-            PushRouter.shared.route(type: type, serverId: serverId, ticketId: ticketId)
+            PushRouter.shared.route(type: type, serverId: serverId, invoiceId: invoiceId, ticketId: ticketId)
             completionHandler()
         }
     }
