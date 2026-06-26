@@ -4,6 +4,14 @@ struct AccountView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var pushRouter: PushRouter
 
+    /// "1.2 (34)" from the bundle, for the About row.
+    static var appVersion: String {
+        let info = Bundle.main.infoDictionary
+        let short = info?["CFBundleShortVersionString"] as? String ?? "—"
+        let build = info?["CFBundleVersion"] as? String ?? "—"
+        return "\(short) (\(build))"
+    }
+
     var body: some View {
         NavigationStack {
             List {
@@ -51,6 +59,18 @@ struct AccountView: View {
                 }
                 .listRowBackground(Color.appCard)
 
+                Section(header: Eyebrow("About & legal").padding(.bottom, 2)) {
+                    LegalLinkRow(title: "Privacy Policy", systemImage: "hand.raised", path: "privacy")
+                    LegalLinkRow(title: "Terms of Service", systemImage: "doc.text", path: "terms")
+                    LegalLinkRow(title: "Help & Support", systemImage: "questionmark.circle", path: "support")
+                    HStack {
+                        Label("Version", systemImage: "info.circle").foregroundStyle(.appForeground)
+                        Spacer()
+                        Text(Self.appVersion).font(.caption.monospacedDigit()).foregroundStyle(.appMuted)
+                    }
+                }
+                .listRowBackground(Color.appCard)
+
                 Section {
                     Button(role: .destructive) {
                         Task { await session.logout() }
@@ -69,6 +89,28 @@ struct AccountView: View {
                 if let id = pushRouter.invoiceId { InvoiceDetailView(invoiceId: id) }
             }
         }
+    }
+}
+
+/// A tappable row that opens a web page (privacy / terms / support) relative to
+/// the configured web origin, with an external-link affordance.
+private struct LegalLinkRow: View {
+    let title: String
+    let systemImage: String
+    let path: String
+
+    var body: some View {
+        Button {
+            WebLink.open(AppConfig.shared.webOrigin, path: path)
+        } label: {
+            HStack {
+                Label(title, systemImage: systemImage).foregroundStyle(.appForeground)
+                Spacer()
+                Image(systemName: "arrow.up.right").font(.caption2).foregroundStyle(.appMuted)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
 
