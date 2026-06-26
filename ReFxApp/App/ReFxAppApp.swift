@@ -4,6 +4,7 @@ import UIKit
 @main
 struct ReFxAppApp: App {
     @StateObject private var session = AppSession()
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -18,6 +19,7 @@ struct ReFxAppApp: App {
             RootView()
                 .environmentObject(session)
                 .environmentObject(AppConfig.shared)
+                .environmentObject(PushRouter.shared)
                 .tint(.appPrimary)
                 .preferredColorScheme(.dark)
                 // Obscure the app-switcher snapshot: when the scene is not active
@@ -32,9 +34,11 @@ struct ReFxAppApp: App {
                     // app was closed mid-operation, freezing the op pill).
                     LiveActivityManager.endAll()
                     await session.start()
-                    // Ask once; awareness notifications are best-effort (see
-                    // BackgroundRefreshScheduler). Declining is fine.
-                    _ = await LocalNotifications.requestAuthorization()
+                    // Ask once, then register for APNs if granted. Declining is
+                    // fine — local awareness notifications still work, and remote
+                    // push stays dormant until the entitlement/backend exist.
+                    PushManager.shared.bind(session)
+                    await PushManager.shared.requestAndRegister()
                 }
         }
         .onChange(of: scenePhase) { phase in

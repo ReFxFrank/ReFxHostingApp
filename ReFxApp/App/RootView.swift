@@ -56,26 +56,47 @@ struct AppLockView: View {
 struct MainTabView: View {
     let user: CurrentUser
     @EnvironmentObject private var session: AppSession
+    @EnvironmentObject private var pushRouter: PushRouter
+    @State private var tab: Tab = .home
+
+    enum Tab: Hashable { case home, servers, support, staff, account }
 
     var body: some View {
-        TabView {
+        TabView(selection: $tab) {
             DashboardView()
                 .tabItem { Label("Home", systemImage: "house") }
+                .tag(Tab.home)
 
             ServersListView()
                 .tabItem { Label("Servers", systemImage: "server.rack") }
+                .tag(Tab.servers)
 
             SupportListView()
                 .tabItem { Label("Support", systemImage: "lifepreserver") }
+                .tag(Tab.support)
 
             if user.globalRole.isStaff {
                 StaffHomeView(role: user.globalRole)
                     .tabItem { Label("Staff", systemImage: "shield.lefthalf.filled") }
+                    .tag(Tab.staff)
             }
 
             AccountView()
                 .tabItem { Label("Account", systemImage: "person.crop.circle") }
                 .badge(session.unreadCount)
+                .tag(Tab.account)
+        }
+        // A tapped push selects the relevant tab. (Deep-pushing to the exact
+        // server/invoice/ticket is a follow-up once the NavigationStacks expose
+        // a path; selecting the section is the v1 behavior.)
+        .onChange(of: pushRouter.pending) { route in
+            guard let route else { return }
+            switch route {
+            case .server: tab = .servers
+            case .billing: tab = .account
+            case .support: tab = .support
+            }
+            pushRouter.pending = nil
         }
     }
 }
