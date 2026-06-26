@@ -42,6 +42,11 @@ struct AccountView: View {
                     } label: {
                         Label("Billing & invoices", systemImage: "creditcard")
                     }
+                    NavigationLink {
+                        PushSettingsView()
+                    } label: {
+                        Label("Notifications", systemImage: "bell")
+                    }
                 }
                 .listRowBackground(Color.appCard)
 

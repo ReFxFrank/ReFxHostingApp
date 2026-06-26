@@ -51,6 +51,20 @@ struct AccountService {
         let newPassword: String
     }
 
+    // MARK: Push tokens (APNs)
+
+    /// Register this device's APNs token so the backend can target it. Backend
+    /// endpoint TBD — see the push-notifications contract.
+    func registerPushToken(_ token: String) async throws {
+        try await client.sendVoid(.post("account/push-tokens", body: PushTokenBody(token: token, platform: "ios")))
+    }
+
+    func unregisterPushToken(_ token: String) async throws {
+        try await client.sendVoid(.delete("account/push-tokens/\(token)"))
+    }
+
+    private struct PushTokenBody: Encodable { let token: String; let platform: String }
+
     // MARK: Two-factor (TOTP)
 
     func totpEnroll() async throws -> TotpEnrollment {
