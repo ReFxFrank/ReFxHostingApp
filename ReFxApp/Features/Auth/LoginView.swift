@@ -70,11 +70,7 @@ struct LoginView: View {
 
     private var brand: some View {
         VStack(spacing: 12) {
-            Image(systemName: "bolt.horizontal.circle.fill")
-                .font(.system(size: 40, weight: .semibold))
-                .foregroundStyle(.appPrimary)
-                .frame(width: 84, height: 84)
-                .cardSurface(elevated: true, glow: true)
+            BrandMark(size: 84)
             VStack(spacing: 4) {
                 Text("ReFx Hosting").font(.title.bold()).foregroundStyle(.appForegroundStrong)
                 Eyebrow("Server Manager")
