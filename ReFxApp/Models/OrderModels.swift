@@ -27,6 +27,15 @@ struct CatalogProduct: Codable, Identifiable, Equatable {
     var isPerSlot: Bool { perSlot || billingModel == .perSlot }
     /// Active product-level prices (used for per-slot products).
     var productPrices: [CatalogPrice] { prices.filter { $0.isActive && $0.hardwareTierId == nil } }
+
+    /// Server bounds can arrive malformed (min > max). Normalize so a SwiftUI
+    /// Stepper range built from these never traps (`a...b` precondition: a <= b).
+    var slotRange: ClosedRange<Int> {
+        let lo = min(minSlots, maxSlots), hi = max(minSlots, maxSlots)
+        return lo...hi
+    }
+    /// Stepper step must be >= 1; a 0/negative step from the server would trap.
+    var safeSlotStep: Int { max(1, slotStep) }
 }
 
 struct CatalogPrice: Codable, Identifiable, Equatable {
