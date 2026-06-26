@@ -24,6 +24,12 @@ final class PasskeyAuthenticator: NSObject {
     private var continuation: CheckedContinuation<Assertion, Error>?
 
     func assert(rpId: String, challenge: Data, allowedCredentialIDs: [Data]) async throws -> Assertion {
+        #if DEBUG
+        // The rpId MUST match the app's `webcredentials:` Associated Domain
+        // (and the domain that hosts apple-app-site-association). A mismatch here
+        // is the usual cause of a passkey that "works on web but not in the app".
+        print("🔑 Passkey assert — rpId=\(rpId), challenge=\(challenge.count)B, allowedCreds=\(allowedCredentialIDs.count)")
+        #endif
         let provider = ASAuthorizationPlatformPublicKeyCredentialProvider(relyingPartyIdentifier: rpId)
         let request = provider.createCredentialAssertionRequest(challenge: challenge)
         if !allowedCredentialIDs.isEmpty {
@@ -61,10 +67,16 @@ extension PasskeyAuthenticator: ASAuthorizationControllerDelegate {
     func authorizationController(controller: ASAuthorizationController,
                                 didCompleteWithError error: Error) {
         defer { continuation = nil }
+        let ns = error as NSError
+        #if DEBUG
+        print("🔑 Passkey error — domain=\(ns.domain) code=\(ns.code) \(ns.localizedDescription)\n   userInfo=\(ns.userInfo)")
+        #endif
         if let asError = error as? ASAuthorizationError, asError.code == .canceled {
             continuation?.resume(throwing: PasskeyError.cancelled)
         } else {
-            continuation?.resume(throwing: PasskeyError.failed(error.localizedDescription))
+            // Include domain+code so the surfaced message is actionable
+            // (e.g. ASAuthorizationError 1004 = no credential / not associated).
+            continuation?.resume(throwing: PasskeyError.failed("\(ns.localizedDescription) (\(ns.domain) \(ns.code))"))
         }
     }
 }
