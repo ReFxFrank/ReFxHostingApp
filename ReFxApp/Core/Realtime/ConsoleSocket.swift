@@ -43,6 +43,9 @@ final class ConsoleSocket: ObservableObject {
     /// Cap the in-memory console buffer so a chatty server can't grow unbounded.
     private let bufferLimit = 2000
     private var didRefreshForAuth = false
+    /// Only surface one connection-error line per connect attempt (reconnect loops
+    /// would otherwise spam the buffer).
+    private var didLogConnectError = false
 
     init(serverId: String,
          origin: URL,
@@ -99,6 +102,11 @@ final class ConsoleSocket: ObservableObject {
         // connecting. (Forcing websockets was the bug behind "console doesn't
         // live-update".)
         let manager = SocketManager(socketURL: origin, config: [
+            // The panel gateway is Socket.IO v4 (EIO4). The client MUST speak v3/v4
+            // or the CONNECT-packet auth (`handshake.auth.token`) is never delivered
+            // — the connection then fails auth and nothing streams. This was the bug
+            // behind "console connects but shows nothing / commands do nothing".
+            .version(.three),
             .log(false),
             .compress,
             .reconnects(true),
@@ -117,10 +125,34 @@ final class ConsoleSocket: ObservableObject {
     }
 
     private func registerHandlers(on socket: SocketIOClient) {
+        #if DEBUG
+        // Log EVERY event the server sends, so a name/shape mismatch is visible in
+        // the Xcode console (event name + payload). Invaluable for diagnosing the
+        // live gateway contract without guessing.
+        socket.onAny { event in
+            print("🖥️ console event: \(event.event)  \(event.items ?? [])")
+        }
+        #endif
+
+        // Transport / handshake failures fire the client-level `.error` event (NOT
+        // the server's app-level `"error"` event). Without this handler they were
+        // silent — a failed connect looked like an empty console. Surface it.
+        socket.on(clientEvent: .error) { [weak self] data, _ in
+            guard let self else { return }
+            let reason = (data.first as? String) ?? String(describing: data.first ?? "connection error")
+            #if DEBUG
+            print("🖥️ console connect_error: \(data)")
+            #endif
+            guard self.connectionState != .forbidden, !self.didLogConnectError else { return }
+            self.didLogConnectError = true
+            self.append(ConsoleLine(text: "Console connection error: \(reason)", stream: "stderr"))
+        }
+
         socket.on(clientEvent: .connect) { [weak self] _, _ in
             guard let self else { return }
             self.connectionState = .connected
             self.didRefreshForAuth = false
+            self.didLogConnectError = false
             socket.emit("subscribe", ["serverId": self.serverId])
         }
 
