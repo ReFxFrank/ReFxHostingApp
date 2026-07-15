@@ -55,6 +55,10 @@ final class ConsoleSocket: ObservableObject {
         self.origin = origin
         self.tokenProvider = tokenProvider
         self.refreshHandler = refreshHandler
+        // Seed from this session's per-server backlog so re-opening a server's
+        // console shows its history instead of a blank screen (the gateway sends
+        // no replay on subscribe).
+        self.lines = ConsoleHistory.shared.lines(for: serverId)
     }
 
     // MARK: - Lifecycle (called on main from the view)
@@ -80,7 +84,10 @@ final class ConsoleSocket: ObservableObject {
         append(ConsoleLine(text: "> \(trimmed)", stream: "input")) // local echo
     }
 
-    func clearBuffer() { lines.removeAll() }
+    func clearBuffer() {
+        lines.removeAll()
+        ConsoleHistory.shared.clear(serverId)
+    }
 
     // MARK: - Connection
 
@@ -235,6 +242,8 @@ final class ConsoleSocket: ObservableObject {
         if lines.count > bufferLimit {
             lines.removeFirst(lines.count - bufferLimit)
         }
+        // Persist so the backlog survives leaving/re-opening this server.
+        ConsoleHistory.shared.store(lines, for: serverId)
     }
 
     private var isFailed: Bool {

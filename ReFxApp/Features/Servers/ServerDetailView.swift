@@ -178,6 +178,10 @@ struct ConsoleScreen: View {
             .navigationTitle("Console")
             .navigationBarTitleDisplayMode(.inline)
             .screenBackground()
+            // Re-establish if the stream was torn down (e.g. after leaving the
+            // server), so opening the console is always live. Idempotent — no-op
+            // when already connected. Seeded history shows immediately.
+            .onAppear { socket.connect() }
     }
 }
 
