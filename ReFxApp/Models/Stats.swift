@@ -30,6 +30,10 @@ struct StatsFrame: Decodable, Equatable {
 /// Unified view-model value the gauges render, fed by either source.
 struct ResourceSnapshot: Equatable {
     var cpuPct: Double
+    /// The server's total vCPU allocation. `cpuPct` is a raw multi-core value
+    /// (e.g. 172 = 1.72 cores), so the gauge normalizes it by this to a 0–100%
+    /// figure, matching the web panel ("1.7 / 4 vCPU").
+    var cpuCores: Double?
     var memUsedMb: Double
     var memTotalMb: Double?
     var diskUsedMb: Double
@@ -39,8 +43,9 @@ struct ResourceSnapshot: Equatable {
     var players: Int?
     var uptimeMs: Double?
 
-    init(live: LiveStats, diskTotalMb: Double?) {
+    init(live: LiveStats, cpuCores: Double?, diskTotalMb: Double?) {
         cpuPct = live.cpuPct
+        self.cpuCores = cpuCores
         memUsedMb = live.memUsedMb
         memTotalMb = live.memTotalMb
         diskUsedMb = live.diskUsedMb
@@ -52,8 +57,9 @@ struct ResourceSnapshot: Equatable {
     }
 
     /// Build from a socket frame, preserving previously-known totals.
-    init(frame: StatsFrame, previous: ResourceSnapshot?, memTotalMb: Double?, diskTotalMb: Double?) {
+    init(frame: StatsFrame, previous: ResourceSnapshot?, cpuCores: Double?, memTotalMb: Double?, diskTotalMb: Double?) {
         cpuPct = frame.cpuPct
+        self.cpuCores = cpuCores ?? previous?.cpuCores
         memUsedMb = frame.memUsedMb
         self.memTotalMb = memTotalMb ?? previous?.memTotalMb
         diskUsedMb = frame.diskUsedMb
