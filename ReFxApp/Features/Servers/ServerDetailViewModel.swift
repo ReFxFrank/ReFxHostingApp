@@ -63,7 +63,7 @@ final class ServerDetailViewModel: ObservableObject {
             let server = try await service.detail(serverId)
             detail = .loaded(server)
             if liveState == nil { liveState = server.state }
-            await loadStats(diskTotalMb: server.diskMb.map(Double.init))
+            await loadStats(cpuCores: server.cpuCores, diskTotalMb: server.diskMb.map(Double.init))
         } catch let error as APIError {
             if detail.value == nil { detail = .failed(error) }
         } catch {
@@ -73,10 +73,10 @@ final class ServerDetailViewModel: ObservableObject {
         }
     }
 
-    private func loadStats(diskTotalMb: Double?) async {
+    private func loadStats(cpuCores: Double?, diskTotalMb: Double?) async {
         guard let service else { return }
         if let live = try? await service.stats(serverId) {
-            snapshot = ResourceSnapshot(live: live, diskTotalMb: diskTotalMb)
+            snapshot = ResourceSnapshot(live: live, cpuCores: cpuCores, diskTotalMb: diskTotalMb)
             // The live stats carry the agent's current state — use it so the
             // pill is accurate on open instead of showing the stale REST state
             // until the first socket frame arrives.
@@ -102,6 +102,7 @@ final class ServerDetailViewModel: ObservableObject {
         let diskTotal = server?.diskMb.map(Double.init)
         let memTotal = snapshot?.memTotalMb
         snapshot = ResourceSnapshot(frame: frame, previous: snapshot,
+                                    cpuCores: server?.cpuCores,
                                     memTotalMb: memTotal, diskTotalMb: diskTotal)
     }
 

@@ -52,8 +52,8 @@ struct GaugeRow: View {
         HStack(spacing: 12) {
             ResourceGauge(
                 title: "CPU",
-                fraction: snapshot.cpuPct / 100,
-                caption: "\(Int(snapshot.cpuPct))%",
+                fraction: cpuFraction,
+                caption: cpuCaption,
                 systemImage: "cpu")
             ResourceGauge(
                 title: "RAM",
@@ -68,6 +68,20 @@ struct GaugeRow: View {
         }
         .padding(Theme.cardPadding)
         .cardSurface()
+    }
+
+    /// `cpuPct` is raw multi-core usage (e.g. 172 = 1.72 cores), so normalize by
+    /// the server's vCPU allocation to a 0–100% gauge, matching the web panel.
+    /// Falls back to the raw value (gauge clamps) if the core count is unknown.
+    private var coresUsed: Double { snapshot.cpuPct / 100 }
+    private var cpuFraction: Double {
+        guard let cores = snapshot.cpuCores, cores > 0 else { return coresUsed }
+        return coresUsed / cores
+    }
+    private var cpuCaption: String {
+        guard let cores = snapshot.cpuCores, cores > 0 else { return "\(Int(snapshot.cpuPct))%" }
+        let coresStr = cores == cores.rounded() ? String(Int(cores)) : String(format: "%.1f", cores)
+        return String(format: "%.1f / %@ vCPU", coresUsed, coresStr)
     }
 
     private func fraction(_ used: Double, _ total: Double?) -> Double {
