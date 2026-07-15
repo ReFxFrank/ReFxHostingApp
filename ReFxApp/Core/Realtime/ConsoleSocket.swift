@@ -24,6 +24,10 @@ final class ConsoleSocket: ObservableObject {
         let id = UUID()
         let text: String
         let stream: String
+        /// Per-server monotonic sequence from the gateway (>= 1); nil for local
+        /// echoes / injected lines and for degraded frames (`seq: 0`). Used to
+        /// dedup backlog against live output.
+        var seq: Int? = nil
         var isError: Bool { stream == "stderr" }
     }
 
@@ -42,6 +46,9 @@ final class ConsoleSocket: ObservableObject {
 
     /// Cap the in-memory console buffer so a chatty server can't grow unbounded.
     private let bufferLimit = 2000
+    /// Line seqs already rendered, so the `console_history` backlog is deduped
+    /// against live frames (and the subscribe-overlap / reconnect overlap).
+    private var seenSeqs: Set<Int> = []
     private var didRefreshForAuth = false
     /// Only surface one connection-error line per connect attempt (reconnect loops
     /// would otherwise spam the buffer).
@@ -56,9 +63,11 @@ final class ConsoleSocket: ObservableObject {
         self.tokenProvider = tokenProvider
         self.refreshHandler = refreshHandler
         // Seed from this session's per-server backlog so re-opening a server's
-        // console shows its history instead of a blank screen (the gateway sends
-        // no replay on subscribe).
+        // console shows its history instantly (before the socket resubscribes).
         self.lines = ConsoleHistory.shared.lines(for: serverId)
+        // Prime dedup so the server's `console_history` replay merges cleanly with
+        // what we already have and only fills the gap produced while we were away.
+        self.seenSeqs = Set(self.lines.compactMap { $0.seq })
     }
 
     // MARK: - Lifecycle (called on main from the view)
@@ -191,9 +200,17 @@ final class ConsoleSocket: ObservableObject {
 
         socket.on("console") { [weak self] data, _ in
             guard let dict = data.first as? [String: Any] else { return }
-            let line = dict["line"] as? String ?? ""
-            let stream = dict["stream"] as? String ?? "stdout"
-            self?.append(ConsoleLine(text: line, stream: stream))
+            self?.ingest(frame: dict)
+        }
+
+        // Recent backlog replayed once on subscribe: `{ serverId, lines: [frame] }`,
+        // oldest → newest, each frame byte-identical to a live `console` frame.
+        // Merged/deduped by `seq`, so it fills the gap since we last watched and
+        // drops the small subscribe/reconnect overlap.
+        socket.on("console_history") { [weak self] data, _ in
+            guard let self, let dict = data.first as? [String: Any],
+                  let frames = dict["lines"] as? [[String: Any]] else { return }
+            for frame in frames { self.ingest(frame: frame) }
         }
 
         socket.on("stats") { [weak self] data, _ in
@@ -237,10 +254,33 @@ final class ConsoleSocket: ObservableObject {
 
     // MARK: - Helpers
 
+    /// Decode a `console` / `console_history` frame and append it, deduped by the
+    /// gateway `seq` (a real seq is >= 1; `seq: 0`/absent means degraded/no id, so
+    /// it's always kept — no replay is sent in that mode, so there's nothing to
+    /// duplicate against). Frames arrive oldest → newest, so appending preserves
+    /// order (the socket delivers `console_history` before any live frame).
+    private func ingest(frame dict: [String: Any]) {
+        let rawSeq = (dict["seq"] as? Int) ?? (dict["seq"] as? NSNumber)?.intValue
+        let seq: Int? = (rawSeq ?? 0) >= 1 ? rawSeq : nil
+        if let seq {
+            guard !seenSeqs.contains(seq) else { return }
+            seenSeqs.insert(seq)
+        }
+        let line = dict["line"] as? String ?? ""
+        let stream = dict["stream"] as? String ?? "stdout"
+        append(ConsoleLine(text: line, stream: stream, seq: seq))
+    }
+
     private func append(_ line: ConsoleLine) {
         lines.append(line)
         if lines.count > bufferLimit {
-            lines.removeFirst(lines.count - bufferLimit)
+            let overflow = lines.count - bufferLimit
+            // Keep seenSeqs bounded to the live buffer: dropped lines can't
+            // reappear (the server's backlog is far smaller than our cap).
+            for trimmed in lines.prefix(overflow) {
+                if let s = trimmed.seq { seenSeqs.remove(s) }
+            }
+            lines.removeFirst(overflow)
         }
         // Persist so the backlog survives leaving/re-opening this server.
         ConsoleHistory.shared.store(lines, for: serverId)
