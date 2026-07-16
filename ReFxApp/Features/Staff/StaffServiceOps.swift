@@ -108,6 +108,12 @@ extension StaffService {
         try await client.send(.patch("bugs/\(id)", body: body))
     }
 
+    /// Assign/unassign a bug. `assigneeId: nil` sends an explicit null to clear it.
+    @discardableResult
+    func assignBug(_ id: String, assigneeId: String?) async throws -> BugReport {
+        try await client.send(.patch("bugs/\(id)", body: AssignBugBody(assigneeId: assigneeId)))
+    }
+
     func addBugComment(_ id: String, body: String, isInternal: Bool) async throws {
         try await client.sendVoid(.post("bugs/\(id)/comments", body: BugCommentBody(body: body, isInternal: isInternal)))
     }

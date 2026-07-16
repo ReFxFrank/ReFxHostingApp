@@ -107,13 +107,27 @@ struct BugAttachment: Decodable, Identifiable, Equatable {
     let createdAt: Date?
 }
 
-/// `PATCH /bugs/:id` — staff triage. Only non-nil fields are written; empty
-/// string clears `area`/`resolutionNote`. `assigneeId` = nil is omitted here;
-/// to clear an assignee send an explicit JSON null (handled via a wrapper).
+/// `PATCH /bugs/:id` — staff triage. Only non-nil fields are written (a nil
+/// field is omitted → "leave unchanged"); an empty string clears
+/// `area`/`resolutionNote`. Do NOT put `assigneeId` here — clearing an assignee
+/// needs an explicit JSON null, which a synthesized Encodable can't express;
+/// use `AssignBugBody` for assignee changes.
 struct UpdateBugBody: Encodable {
     var status: String?
     var severity: String?
     var area: String?
-    var assigneeId: String?
     var resolutionNote: String?
+}
+
+/// `PATCH /bugs/:id` for assignee changes only. Always encodes `assigneeId` —
+/// as the id to assign, or an explicit `null` to unassign (which the server
+/// requires to actually clear it).
+struct AssignBugBody: Encodable {
+    let assigneeId: String?
+    enum CodingKeys: String, CodingKey { case assigneeId }
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        if let assigneeId { try c.encode(assigneeId, forKey: .assigneeId) }
+        else { try c.encodeNil(forKey: .assigneeId) }
+    }
 }

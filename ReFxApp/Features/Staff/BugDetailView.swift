@@ -28,14 +28,14 @@ final class BugDetailViewModel: ObservableObject {
         if staff.isEmpty { staff = (try? await service.bugStaff()) ?? [] }
     }
 
-    func setStatus(_ status: BugStatus) async { await patch(UpdateBugBody(status: status.rawValue)) }
-    func setSeverity(_ severity: BugSeverity) async { await patch(UpdateBugBody(severity: severity.rawValue)) }
-    func assign(_ user: BugUserRef?) async { await patch(UpdateBugBody(assigneeId: user?.id)) }
+    func setStatus(_ status: BugStatus) async { await run { try await $0.updateBug(self.bugId, UpdateBugBody(status: status.rawValue)) } }
+    func setSeverity(_ severity: BugSeverity) async { await run { try await $0.updateBug(self.bugId, UpdateBugBody(severity: severity.rawValue)) } }
+    func assign(_ user: BugUserRef?) async { await run { try await $0.assignBug(self.bugId, assigneeId: user?.id) } }
 
-    private func patch(_ body: UpdateBugBody) async {
+    private func run(_ work: (StaffService) async throws -> BugReport) async {
         guard let service else { return }
         actionError = nil
-        do { state = .loaded(try await service.updateBug(bugId, body)); await load() }
+        do { state = .loaded(try await work(service)); await load() }
         catch let error as APIError { actionError = error.userMessage }
         catch { actionError = "Couldn't update the report." }
     }
