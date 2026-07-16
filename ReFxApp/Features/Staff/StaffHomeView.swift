@@ -28,13 +28,23 @@ struct StaffHomeView: View {
     // MARK: Overview
 
     @ViewBuilder private var overview: some View {
-        NavigationLink {
-            StaffOverviewView()
-        } label: {
-            ManageRow(icon: "chart.bar.xaxis", title: "Platform overview",
-                      subtitle: "Live KPIs, nodes & server states")
+        VStack(spacing: 10) {
+            NavigationLink {
+                StaffOverviewView()
+            } label: {
+                ManageRow(icon: "chart.bar.xaxis", title: "Platform overview",
+                          subtitle: "Live KPIs, nodes & server states")
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                GrowthView()
+            } label: {
+                ManageRow(icon: "chart.line.uptrend.xyaxis", title: "Growth",
+                          subtitle: "Signups, channels & MRR")
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: Native operations
@@ -63,6 +73,16 @@ struct StaffHomeView: View {
                 NavigationLink { NodeAdminView() } label: {
                     ManageRow(icon: "externaldrive.connected.to.line.below",
                               title: "Nodes", subtitle: "Health, ping, restart & update agents")
+                }.buttonStyle(.plain)
+
+                NavigationLink { NetworkOverviewView() } label: {
+                    ManageRow(icon: "network", title: "Network",
+                              subtitle: "Fleet latency, loss & throughput")
+                }.buttonStyle(.plain)
+
+                NavigationLink { DatabaseHostsView() } label: {
+                    ManageRow(icon: "cylinder.split.1x2", title: "Database hosts",
+                              subtitle: "MySQL/MariaDB provisioning hosts")
                 }.buttonStyle(.plain)
 
                 NavigationLink { PlatformAlertsView() } label: {
