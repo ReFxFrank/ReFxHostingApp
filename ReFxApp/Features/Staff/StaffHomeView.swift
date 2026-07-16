@@ -60,6 +60,13 @@ struct StaffHomeView: View {
             }.buttonStyle(.plain)
 
             if isAdmin {
+                NavigationLink { BugTriageView() } label: {
+                    ManageRow(icon: "ladybug", title: "Bug triage",
+                              subtitle: "Review, assign & resolve bug reports")
+                }.buttonStyle(.plain)
+            }
+
+            if isAdmin {
                 NavigationLink { AdminServersView() } label: {
                     ManageRow(icon: "server.rack", title: "Server admin",
                               subtitle: "Find & control any server")

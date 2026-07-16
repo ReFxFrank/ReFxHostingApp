@@ -83,4 +83,34 @@ extension StaffService {
     func deleteHomepageAlert(_ id: String) async throws {
         try await client.sendVoid(.delete("admin/homepage-alerts/\(id)"))
     }
+
+    // MARK: Bug reports (staff triage)
+
+    func bugs(page: Int = 1, status: BugStatus? = nil, query: String? = nil) async throws -> Page<BugReport> {
+        var items = [URLQueryItem(name: "page", value: String(page)),
+                     URLQueryItem(name: "pageSize", value: "25")]
+        if let status, status != .unknown { items.append(URLQueryItem(name: "status", value: status.rawValue)) }
+        if let query, !query.isEmpty { items.append(URLQueryItem(name: "q", value: query)) }
+        return try await client.sendPaginated(.get("bugs", query: items))
+    }
+
+    /// `GET /bugs/staff` — assignee picker (staff users).
+    func bugStaff() async throws -> [BugUserRef] {
+        try await client.send(.get("bugs/staff"))
+    }
+
+    func bug(_ id: String) async throws -> BugReport {
+        try await client.send(.get("bugs/\(id)"))
+    }
+
+    @discardableResult
+    func updateBug(_ id: String, _ body: UpdateBugBody) async throws -> BugReport {
+        try await client.send(.patch("bugs/\(id)", body: body))
+    }
+
+    func addBugComment(_ id: String, body: String, isInternal: Bool) async throws {
+        try await client.sendVoid(.post("bugs/\(id)/comments", body: BugCommentBody(body: body, isInternal: isInternal)))
+    }
+
+    private struct BugCommentBody: Encodable { let body: String; let isInternal: Bool }
 }
