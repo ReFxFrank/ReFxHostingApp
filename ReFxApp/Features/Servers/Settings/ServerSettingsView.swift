@@ -12,6 +12,10 @@ final class ServerSettingsViewModel: ObservableObject {
     @Published private(set) var isSavingStartup = false
     @Published var autoRestart = true
     @Published private(set) var java: JavaVersionSelector?
+    /// Custom-domains module is WEB_APP-only; the endpoint 400s otherwise, so we
+    /// probe it and only surface the row when it's actually supported.
+    @Published private(set) var domainsSupported = false
+    @Published private(set) var vanitySupported = false
 
     let serverId: String
     private var service: ServerSettingsService?
@@ -44,6 +48,9 @@ final class ServerSettingsViewModel: ObservableObject {
         }
         // Java version is Minecraft-only (400 otherwise) — tolerate absence.
         java = try? await service.javaVersion(serverId)
+        // Probe the WEB_APP-only modules; show the rows only when supported.
+        domainsSupported = (try? await service.domains(serverId)) != nil
+        if let vanity = try? await service.vanityStatus(serverId) { vanitySupported = vanity.enabled }
     }
 
     func saveStartup() async {
@@ -305,6 +312,20 @@ struct ServerSettingsView: View {
                 AllocationsView(serverId: model.serverId)
             } label: {
                 Label("Ports & allocations", systemImage: "network")
+            }
+            if model.vanitySupported {
+                NavigationLink {
+                    VanityAddressView(serverId: model.serverId)
+                } label: {
+                    Label("Vanity address", systemImage: "sparkles")
+                }
+            }
+            if model.domainsSupported {
+                NavigationLink {
+                    DomainsView(serverId: model.serverId)
+                } label: {
+                    Label("Custom domains", systemImage: "globe")
+                }
             }
         } header: {
             Text("Network")

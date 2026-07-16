@@ -83,11 +83,53 @@ struct ServerSettingsService {
             .put("servers/\(serverId)/java-version", body: JavaVersionBody(version: version)))
     }
 
+    // MARK: Custom domains (WEB_APP servers only — 400 otherwise)
+
+    /// `GET /servers/:id/domains` → the server's custom domains.
+    func domains(_ serverId: String) async throws -> [ServerDomain] {
+        try await client.send(.get("servers/\(serverId)/domains"))
+    }
+
+    /// `POST /servers/:id/domains { hostname }` → created domain (+ `dnsTarget`).
+    func addDomain(_ serverId: String, hostname: String) async throws -> ServerDomain {
+        try await client.send(.post("servers/\(serverId)/domains", body: HostnameBody(hostname: hostname)))
+    }
+
+    /// `POST /servers/:id/domains/:domainId/verify` → domain (+ `dnsTarget`, `verified`).
+    func verifyDomain(_ serverId: String, domainId: String) async throws -> ServerDomain {
+        try await client.send(.post("servers/\(serverId)/domains/\(domainId)/verify"))
+    }
+
+    /// `DELETE /servers/:id/domains/:domainId`.
+    func deleteDomain(_ serverId: String, domainId: String) async throws {
+        try await client.sendVoid(.delete("servers/\(serverId)/domains/\(domainId)"))
+    }
+
+    // MARK: Vanity address
+
+    /// `GET /servers/:id/vanity-address` status card.
+    func vanityStatus(_ serverId: String) async throws -> VanityStatus {
+        try await client.send(.get("servers/\(serverId)/vanity-address"))
+    }
+
+    /// `POST /servers/:id/vanity-address { label }` — "applied" (paid from credit)
+    /// or "invoiced" (payment needed). Owner-only.
+    func setVanity(_ serverId: String, label: String) async throws -> VanityPurchaseResult {
+        try await client.send(.post("servers/\(serverId)/vanity-address", body: VanityBody(label: label)))
+    }
+
+    /// `DELETE /servers/:id/vanity-address` → `{ removed }`. Owner-only.
+    func removeVanity(_ serverId: String) async throws {
+        try await client.sendVoid(.delete("servers/\(serverId)/vanity-address"))
+    }
+
     private struct StartupBody: Encodable { let startupCommand: String }
     private struct VariableBody: Encodable { let envName: String; let value: String }
     private struct AllocationBody: Encodable { let ip: String; let port: Int }
     private struct AutoRestartBody: Encodable { let enabled: Bool }
     private struct JavaVersionBody: Encodable { let version: String }
+    private struct HostnameBody: Encodable { let hostname: String }
+    private struct VanityBody: Encodable { let label: String }
 }
 
 /// `GET /servers/:id/java-version` selector.
