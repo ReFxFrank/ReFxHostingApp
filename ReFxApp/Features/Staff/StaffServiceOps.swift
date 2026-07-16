@@ -237,4 +237,17 @@ extension StaffService {
     func setBackupStorageConfig(_ body: SetBackupStorageBody) async throws {
         try await client.sendVoid(.patch("admin/settings/backup-storage", body: body))
     }
+
+    // MARK: Server transfers  (servers.manage / servers.read)
+
+    @discardableResult
+    func transferServer(_ id: String, toNodeId: String) async throws -> ServerTransfer {
+        try await client.send(.post("admin/servers/\(id)/transfer", body: TransferBody(toNodeId: toNodeId)))
+    }
+
+    func serverTransfers(_ id: String) async throws -> [ServerTransfer] {
+        try await client.send(.get("admin/servers/\(id)/transfers"))
+    }
+
+    private struct TransferBody: Encodable { let toNodeId: String }
 }
