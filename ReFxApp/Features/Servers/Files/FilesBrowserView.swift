@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// File manager for one server, rooted at `path`. Directories push another
 /// `FilesBrowserView` (native back gives a breadcrumb); files push the editor.
@@ -12,6 +13,8 @@ struct FilesBrowserView: View {
     @State private var newFolderName = ""
     @State private var renaming: FileEntry?
     @State private var renameText = ""
+    @State private var showImporter = false
+    @State private var showSftp = false
 
     init(serverId: String, path: String = "/") {
         self.serverId = serverId
@@ -34,12 +37,23 @@ struct FilesBrowserView: View {
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                if model.isUploading { ProgressView() }
+                Button { showSftp = true } label: { Image(systemName: "network") }
+                    .accessibilityLabel("SFTP details")
+                Button { showImporter = true } label: { Image(systemName: "arrow.up.doc") }
+                    .accessibilityLabel("Upload file").disabled(model.isUploading)
                 Button { newFolderName = ""; showNewFolder = true } label: {
                     Image(systemName: "folder.badge.plus")
                 }
                 .accessibilityLabel("New folder")
             }
+        }
+        .fileImporter(isPresented: $showImporter, allowedContentTypes: [.item]) { result in
+            if case .success(let url) = result { Task { await model.upload(fileURL: url) } }
+        }
+        .sheet(isPresented: $showSftp) {
+            SftpDetailsView(serverId: serverId).environmentObject(session)
         }
         .alert("New folder", isPresented: $showNewFolder) {
             TextField("Folder name", text: $newFolderName)
@@ -80,6 +94,35 @@ struct FilesBrowserView: View {
                         } label: { Label("Rename", systemImage: "pencil") }
                             .tint(.appPrimary)
                     }
+                    .swipeActions(edge: .leading) {
+                        if isArchive(entry) {
+                            Button {
+                                Task { await model.decompress(entry) }
+                            } label: { Label("Extract", systemImage: "archivebox") }
+                                .tint(.appSuccess)
+                        } else {
+                            Button {
+                                Task { await model.compress(entry) }
+                            } label: { Label("Compress", systemImage: "archivebox") }
+                                .tint(.appSecondary)
+                        }
+                    }
+                    .contextMenu {
+                        Button {
+                            Task { await model.compress(entry) }
+                        } label: { Label("Compress to archive", systemImage: "archivebox") }
+                        if isArchive(entry) {
+                            Button {
+                                Task { await model.decompress(entry) }
+                            } label: { Label("Extract here", systemImage: "arrow.up.bin") }
+                        }
+                        Button { renaming = entry; renameText = entry.name } label: {
+                            Label("Rename", systemImage: "pencil")
+                        }
+                        Button(role: .destructive) {
+                            Task { await model.delete(entry) }
+                        } label: { Label("Delete", systemImage: "trash") }
+                    }
             }
         }
         .listStyle(.plain)
@@ -104,6 +147,14 @@ struct FilesBrowserView: View {
     private var title: String {
         if model.path == "/" || model.path.isEmpty { return "Files" }
         return (model.path as NSString).lastPathComponent
+    }
+
+    /// Extensions the server can extract via `files/decompress`.
+    private func isArchive(_ entry: FileEntry) -> Bool {
+        guard !entry.isDir else { return false }
+        let name = entry.name.lowercased()
+        return [".zip", ".tar", ".tar.gz", ".tgz", ".gz", ".tar.bz2", ".tbz2", ".rar", ".7z"]
+            .contains { name.hasSuffix($0) }
     }
 }
 

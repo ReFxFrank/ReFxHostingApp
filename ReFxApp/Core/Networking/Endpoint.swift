@@ -11,6 +11,10 @@ struct Endpoint {
     var path: String
     var query: [URLQueryItem] = []
     var body: Encodable?
+    /// Raw request body (e.g. a file's bytes for `files/upload`). When set it is
+    /// sent verbatim with `rawContentType` instead of a JSON-encoded `body`.
+    var rawBody: Data?
+    var rawContentType: String = "application/octet-stream"
     var authenticated: Bool = true
 
     func url(base: URL) -> URL? {
@@ -44,5 +48,12 @@ extension Endpoint {
 
     static func delete(_ path: String, body: Encodable? = nil) -> Endpoint {
         Endpoint(method: .delete, path: path, body: body)
+    }
+
+    /// Raw-body POST (e.g. `files/upload`): the whole request body is `data`.
+    static func upload(_ path: String, query: [URLQueryItem] = [], data: Data,
+                       contentType: String = "application/octet-stream") -> Endpoint {
+        Endpoint(method: .post, path: path, query: query,
+                 rawBody: data, rawContentType: contentType)
     }
 }

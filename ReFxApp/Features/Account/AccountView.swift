@@ -27,6 +27,11 @@ struct AccountView: View {
 
                 Section(header: Eyebrow("Account").padding(.bottom, 2)) {
                     NavigationLink {
+                        EditProfileView()
+                    } label: {
+                        Label("Edit profile", systemImage: "person.crop.circle")
+                    }
+                    NavigationLink {
                         NotificationsView()
                     } label: {
                         Label("Notifications", systemImage: "bell")

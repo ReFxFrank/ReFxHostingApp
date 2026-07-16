@@ -5,6 +5,9 @@ import UIKit
 final class SecurityViewModel: ObservableObject {
     @Published private(set) var apiKeys: [ApiKey] = []
     @Published private(set) var keysError: APIError?
+    @Published private(set) var passkeys: [PasskeyCredential] = []
+    @Published private(set) var passkeysLoaded = false
+    @Published var isRegisteringPasskey = false
     @Published var message: String?
     @Published var isError = false
     @Published var revealedKey: String?
@@ -55,6 +58,52 @@ final class SecurityViewModel: ObservableObject {
         await session?.reloadUser()
     }
 
+    // MARK: Passkeys
+
+    func loadPasskeys() async {
+        guard let service else { return }
+        do { passkeys = try await service.passkeys(); passkeysLoaded = true }
+        catch { passkeysLoaded = true }   // keep the section usable even if listing fails
+    }
+
+    func registerPasskey(label: String) async {
+        guard let service, !isRegisteringPasskey else { return }
+        isRegisteringPasskey = true
+        defer { isRegisteringPasskey = false }
+        do {
+            let options = try await service.passkeyRegisterOptions()
+            guard let challenge = options.challengeData, let userID = options.userIDData else {
+                flash("Couldn't start passkey registration.", error: true); return
+            }
+            let authenticator = PasskeyAuthenticator()
+            let reg = try await authenticator.register(
+                rpId: options.rp.id, userName: options.user.name,
+                userID: userID, challenge: challenge)
+            let response = WebAuthnRegistrationResponse(
+                credentialID: reg.credentialID,
+                clientDataJSON: reg.clientDataJSON,
+                attestationObject: reg.attestationObject)
+            let trimmed = label.trimmingCharacters(in: .whitespaces)
+            try await service.passkeyRegisterVerify(response: response, label: trimmed.isEmpty ? nil : trimmed)
+            await loadPasskeys()
+            flash("Passkey added.", error: false)
+        } catch PasskeyAuthenticator.PasskeyError.cancelled {
+            // user backed out — no message
+        } catch PasskeyAuthenticator.PasskeyError.failed(let reason) {
+            flash("Passkey setup failed: \(reason)", error: true)
+        } catch let error as APIError {
+            flash(error.userMessage, error: true)
+        } catch {
+            flash("Couldn't add the passkey.", error: true)
+        }
+    }
+
+    func deletePasskey(_ credential: PasskeyCredential) async {
+        guard let service else { return }
+        do { try await service.deletePasskey(credential.id); await loadPasskeys() }
+        catch { flash("Couldn't remove the passkey.", error: true) }
+    }
+
     private func flash(_ text: String, error: Bool) { message = text; isError = error }
 }
 
@@ -64,6 +113,7 @@ struct SecurityView: View {
     @State private var showEnroll = false
     @State private var showCreateKey = false
     @State private var confirmDisable = false
+    @State private var showAddPasskey = false
 
     var body: some View {
         Form {
@@ -116,6 +166,40 @@ struct SecurityView: View {
                 Text("API keys")
             }
             .listRowBackground(Color.appCard)
+
+            Section {
+                if model.passkeysLoaded && model.passkeys.isEmpty {
+                    Text("No passkeys yet.").font(.footnote).foregroundStyle(.appMuted)
+                }
+                ForEach(model.passkeys) { passkey in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(passkey.displayLabel).foregroundStyle(.appForeground)
+                        if let created = passkey.createdAt {
+                            Text("Added \(created.formatted(.relative(presentation: .named)))")
+                                .font(.caption2).foregroundStyle(.appMuted)
+                        }
+                    }
+                    .swipeActions {
+                        Button(role: .destructive) { Task { await model.deletePasskey(passkey) } } label: {
+                            Label("Remove", systemImage: "trash")
+                        }
+                    }
+                }
+                Button {
+                    showAddPasskey = true
+                } label: {
+                    HStack {
+                        Label("Add passkey", systemImage: "person.badge.key")
+                        if model.isRegisteringPasskey { Spacer(); ProgressView() }
+                    }
+                }
+                .disabled(model.isRegisteringPasskey)
+            } header: {
+                Text("Passkeys")
+            } footer: {
+                Text("Sign in with Face ID or Touch ID instead of a password. Passkeys are stored in your iCloud Keychain.")
+            }
+            .listRowBackground(Color.appCard)
         }
         .scrollContentBackground(.hidden).screenBackground()
         .navigationTitle("Security")
@@ -125,6 +209,9 @@ struct SecurityView: View {
         }
         .sheet(isPresented: $showCreateKey) {
             CreateApiKeyView { name, scopes in await model.createKey(name: name, scopes: scopes) }
+        }
+        .sheet(isPresented: $showAddPasskey) {
+            AddPasskeyView { label in await model.registerPasskey(label: label) }
         }
         .alert("API key created", isPresented: Binding(
             get: { model.revealedKey != nil }, set: { if !$0 { model.revealedKey = nil } })) {
@@ -139,7 +226,40 @@ struct SecurityView: View {
             Button("Disable", role: .destructive) { Task { await model.disableTotp() } }
             Button("Cancel", role: .cancel) {}
         }
-        .task { model.bind(session); await model.loadKeys() }
+        .task { model.bind(session); await model.loadKeys(); await model.loadPasskeys() }
+    }
+}
+
+/// Name a new passkey before triggering the system registration sheet.
+struct AddPasskeyView: View {
+    let onAdd: (String) async -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var label = ""
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("e.g. iPhone", text: $label)
+                } header: {
+                    Text("Passkey name")
+                } footer: {
+                    Text("A label to recognise this passkey later. After you continue, iOS will ask you to save it with Face ID or Touch ID.")
+                }
+            }
+            .scrollContentBackground(.hidden).screenBackground()
+            .navigationTitle("Add passkey").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Continue") {
+                        let name = label
+                        dismiss()
+                        Task { await onAdd(name) }
+                    }
+                }
+            }
+        }
     }
 }
 

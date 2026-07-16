@@ -33,10 +33,10 @@ final class SchedulesViewModel: ObservableObject {
     }
 
     func create(name: String, cron: String, onlyWhenOnline: Bool,
-                action: ScheduleAction, payload: String) async {
+                tasks: [ScheduleTaskInput]) async {
         await run {
             try await $0.create(self.serverId, name: name, cron: cron,
-                                 onlyWhenOnline: onlyWhenOnline, action: action, payload: payload)
+                                 onlyWhenOnline: onlyWhenOnline, tasks: tasks)
         }
     }
 
@@ -75,8 +75,8 @@ struct SchedulesView: View {
             }
         }
         .sheet(isPresented: $showCreate) {
-            CreateScheduleSheet { name, cron, online, action, payload in
-                Task { await model.create(name: name, cron: cron, onlyWhenOnline: online, action: action, payload: payload) }
+            CreateScheduleSheet { name, cron, online, tasks in
+                Task { await model.create(name: name, cron: cron, onlyWhenOnline: online, tasks: tasks) }
             }
         }
         .task { model.bind(session); if model.state.value == nil { await model.load() } }
@@ -129,14 +129,13 @@ struct ScheduleRow: View {
 }
 
 struct CreateScheduleSheet: View {
-    let onCreate: (String, String, Bool, ScheduleAction, String) -> Void
+    let onCreate: (String, String, Bool, [ScheduleTaskInput]) -> Void
     @Environment(\.dismiss) private var dismiss
 
     @State private var name = ""
     @State private var cron = "0 */6 * * *"
     @State private var onlyWhenOnline = false
-    @State private var action: ScheduleAction = .power
-    @State private var payload = "restart"
+    @State private var tasks: [ScheduleTaskInput] = [ScheduleTaskInput(action: .power, payload: "restart")]
 
     var body: some View {
         NavigationStack {
@@ -148,38 +147,53 @@ struct CreateScheduleSheet: View {
                     Toggle("Only when online", isOn: $onlyWhenOnline)
                 }
                 Section {
-                    Picker("Action", selection: $action) {
-                        Text("Power").tag(ScheduleAction.power)
-                        Text("Command").tag(ScheduleAction.command)
-                        Text("Backup").tag(ScheduleAction.backup)
+                    ForEach($tasks) { $task in
+                        VStack(alignment: .leading, spacing: 6) {
+                            Picker("Action", selection: $task.action) {
+                                Text("Power").tag(ScheduleAction.power)
+                                Text("Command").tag(ScheduleAction.command)
+                                Text("Backup").tag(ScheduleAction.backup)
+                            }
+                            TextField(task.payloadHint, text: $task.payload)
+                                .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        }
+                        .padding(.vertical, 2)
                     }
-                    TextField(payloadHint, text: $payload)
-                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    .onDelete { tasks.remove(atOffsets: $0) }
+                    .onMove { tasks.move(fromOffsets: $0, toOffset: $1) }
+                    Button {
+                        tasks.append(ScheduleTaskInput())
+                    } label: { Label("Add task", systemImage: "plus.circle") }
                 } header: {
-                    Text("Task")
+                    Text("Tasks — run in order")
                 } footer: {
-                    Text(payloadHint)
+                    Text("Add multiple steps (e.g. a warning command, then restart, then a backup). Drag to reorder, swipe to delete.")
                 }
             }
             .scrollContentBackground(.hidden).screenBackground()
             .navigationTitle("New schedule").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .topBarLeading) { EditButton() }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Create") {
-                        onCreate(name, cron, onlyWhenOnline, action, payload); dismiss()
-                    }.disabled(name.isEmpty || cron.isEmpty)
+                        onCreate(name, cron, onlyWhenOnline, cleanedTasks); dismiss()
+                    }.disabled(!isValid)
                 }
             }
         }
     }
 
-    private var payloadHint: String {
-        switch action {
-        case .power: return "start, stop, restart or kill"
-        case .command: return "Console command to run"
-        case .backup: return "Backup name"
-        case .unknown: return "Payload"
-        }
+    /// Tasks with a payload (power tasks default to "restart" if left blank).
+    private var cleanedTasks: [ScheduleTaskInput] {
+        tasks.map { t in
+            var t = t
+            if t.action == .power, t.payload.trimmingCharacters(in: .whitespaces).isEmpty { t.payload = "restart" }
+            return t
+        }.filter { $0.action == .power || !$0.payload.trimmingCharacters(in: .whitespaces).isEmpty }
+    }
+
+    private var isValid: Bool {
+        !name.isEmpty && !cron.isEmpty && !cleanedTasks.isEmpty
     }
 }

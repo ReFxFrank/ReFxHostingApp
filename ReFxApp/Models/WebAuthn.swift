@@ -46,6 +46,56 @@ struct WebAuthnAssertionResponse: Encodable {
     }
 }
 
+/// `POST /auth/mfa/webauthn/register/options` → @simplewebauthn
+/// `generateRegistrationOptions` result. For an iOS platform-credential
+/// registration we only need the challenge, the rpId, and the user handle/name.
+struct PasskeyRegistrationOptions: Decodable {
+    let challenge: String          // base64url
+    let rp: RP
+    let user: User
+
+    struct RP: Decodable { let id: String; let name: String? }
+    struct User: Decodable { let id: String; let name: String; let displayName: String? }
+
+    var challengeData: Data? { Base64URL.decode(challenge) }
+    var userIDData: Data? { Base64URL.decode(user.id) }
+}
+
+/// Standard WebAuthn `RegistrationResponseJSON` the server verifies via
+/// `POST /auth/mfa/webauthn/register/verify { response, label? }`.
+struct WebAuthnRegistrationResponse: Encodable {
+    let id: String
+    let rawId: String
+    let type = "public-key"
+    let response: AttestationPayload
+    let clientExtensionResults = ClientExtensionResults()
+
+    struct AttestationPayload: Encodable {
+        let clientDataJSON: String
+        let attestationObject: String
+    }
+    struct ClientExtensionResults: Encodable {}
+
+    init(credentialID: Data, clientDataJSON: Data, attestationObject: Data) {
+        let credId = Base64URL.encode(credentialID)
+        self.id = credId
+        self.rawId = credId
+        self.response = AttestationPayload(
+            clientDataJSON: Base64URL.encode(clientDataJSON),
+            attestationObject: Base64URL.encode(attestationObject))
+    }
+}
+
+/// `GET /auth/mfa/webauthn/credentials` → the passkeys registered on the account.
+struct PasskeyCredential: Decodable, Identifiable, Equatable {
+    let id: String
+    let label: String?
+    let createdAt: Date?
+    let lastUsedAt: Date?
+
+    var displayLabel: String { (label?.isEmpty == false ? label : nil) ?? "Passkey" }
+}
+
 /// base64url (no padding) <-> Data, as WebAuthn uses throughout.
 enum Base64URL {
     static func encode(_ data: Data) -> String {
