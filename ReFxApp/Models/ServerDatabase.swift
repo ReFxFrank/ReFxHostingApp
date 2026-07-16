@@ -1,8 +1,9 @@
 import Foundation
 
-enum DbEngine: String, Codable, Equatable {
+enum DbEngine: String, Codable, CaseIterable, Identifiable, Equatable {
     case mysql = "MYSQL"
     case mariadb = "MARIADB"
+    case postgresql = "POSTGRESQL"
     case unknown
 
     init(from decoder: Decoder) throws {
@@ -10,7 +11,15 @@ enum DbEngine: String, Codable, Equatable {
         self = DbEngine(rawValue: raw) ?? .unknown
     }
 
-    var label: String { self == .mariadb ? "MariaDB" : "MySQL" }
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .mysql: return "MySQL"
+        case .mariadb: return "MariaDB"
+        case .postgresql: return "PostgreSQL"
+        case .unknown: return "Unknown"
+        }
+    }
 }
 
 /// `GET /servers/:id/databases` (password stripped). Create/rotate additionally

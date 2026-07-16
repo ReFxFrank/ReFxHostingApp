@@ -101,6 +101,29 @@ struct CreateNodeResult: Decodable {
     let bootstrapToken: String
 }
 
+/// `POST /admin/nodes/:id/bootstrap-token` — rotate the one-time install token.
+struct NodeBootstrapToken: Decodable {
+    let bootstrapToken: String
+    let expiresAt: Date?
+}
+
+/// `POST /admin/nodes/:id/pin-cert` — the pinned agent cert fingerprint.
+struct PinCertResult: Decodable { let sha256: String }
+
+/// `GET /nodes/:id/capacity` — overcommit-adjusted totals vs provisioned usage.
+/// Values are cores (CPU) or MB (memory/disk); `free` may be negative if
+/// overcommitted beyond total.
+struct NodeCapacity: Decodable, Equatable {
+    let cpu: Group
+    let memory: Group
+    let disk: Group
+    struct Group: Decodable, Equatable {
+        let total: Double
+        let used: Double
+        let free: Double
+    }
+}
+
 // MARK: - Users (admin)
 
 /// `GET /admin/users` (admin list row).

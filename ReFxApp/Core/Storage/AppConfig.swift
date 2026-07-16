@@ -98,7 +98,3 @@ final class AppConfig: ObservableObject {
         return url
     }
 }
-
-private extension String {
-    var trimmed: String { trimmingCharacters(in: .whitespacesAndNewlines) }
-}

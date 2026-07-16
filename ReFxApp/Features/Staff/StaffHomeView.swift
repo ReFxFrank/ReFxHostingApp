@@ -28,13 +28,23 @@ struct StaffHomeView: View {
     // MARK: Overview
 
     @ViewBuilder private var overview: some View {
-        NavigationLink {
-            StaffOverviewView()
-        } label: {
-            ManageRow(icon: "chart.bar.xaxis", title: "Platform overview",
-                      subtitle: "Live KPIs, nodes & server states")
+        VStack(spacing: 10) {
+            NavigationLink {
+                StaffOverviewView()
+            } label: {
+                ManageRow(icon: "chart.bar.xaxis", title: "Platform overview",
+                          subtitle: "Live KPIs, nodes & server states")
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                GrowthView()
+            } label: {
+                ManageRow(icon: "chart.line.uptrend.xyaxis", title: "Growth",
+                          subtitle: "Signups, channels & MRR")
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: Native operations
@@ -50,6 +60,13 @@ struct StaffHomeView: View {
             }.buttonStyle(.plain)
 
             if isAdmin {
+                NavigationLink { BugTriageView() } label: {
+                    ManageRow(icon: "ladybug", title: "Bug triage",
+                              subtitle: "Review, assign & resolve bug reports")
+                }.buttonStyle(.plain)
+            }
+
+            if isAdmin {
                 NavigationLink { AdminServersView() } label: {
                     ManageRow(icon: "server.rack", title: "Server admin",
                               subtitle: "Find & control any server")
@@ -63,6 +80,16 @@ struct StaffHomeView: View {
                 NavigationLink { NodeAdminView() } label: {
                     ManageRow(icon: "externaldrive.connected.to.line.below",
                               title: "Nodes", subtitle: "Health, ping, restart & update agents")
+                }.buttonStyle(.plain)
+
+                NavigationLink { NetworkOverviewView() } label: {
+                    ManageRow(icon: "network", title: "Network",
+                              subtitle: "Fleet latency, loss & throughput")
+                }.buttonStyle(.plain)
+
+                NavigationLink { DatabaseHostsView() } label: {
+                    ManageRow(icon: "cylinder.split.1x2", title: "Database hosts",
+                              subtitle: "MySQL/MariaDB provisioning hosts")
                 }.buttonStyle(.plain)
 
                 NavigationLink { PlatformAlertsView() } label: {
@@ -113,6 +140,26 @@ struct StaffHomeView: View {
             NavigationLink { AdminLocationsView() } label: {
                 ManageRow(icon: "mappin.and.ellipse", title: "Locations",
                           subtitle: "Regions for grouping nodes")
+            }.buttonStyle(.plain)
+
+            NavigationLink { StaffMembersView() } label: {
+                ManageRow(icon: "person.3", title: "Team members",
+                          subtitle: "Public “meet the team” page")
+            }.buttonStyle(.plain)
+
+            NavigationLink { HomepageAlertsView() } label: {
+                ManageRow(icon: "megaphone.fill", title: "Homepage alerts",
+                          subtitle: "Storefront banners")
+            }.buttonStyle(.plain)
+
+            NavigationLink { StatusIncidentsView() } label: {
+                ManageRow(icon: "exclamationmark.triangle", title: "Status incidents",
+                          subtitle: "Publish incidents & webhooks")
+            }.buttonStyle(.plain)
+
+            NavigationLink { SupportSettingsView() } label: {
+                ManageRow(icon: "lifepreserver", title: "Support settings",
+                          subtitle: "Canned replies, KB, categories")
             }.buttonStyle(.plain)
 
             NavigationLink { AdminSettingsView() } label: {

@@ -25,6 +25,7 @@ struct AdminServersView: View {
     @EnvironmentObject private var session: AppSession
     @StateObject private var model = AdminServersViewModel()
     @State private var showCreate = false
+    @State private var transferServer: Server?
 
     var body: some View {
         AsyncStateView(
@@ -48,6 +49,9 @@ struct AdminServersView: View {
         .sheet(isPresented: $showCreate) {
             AdminCreateServerView { Task { await model.refresh() } }
         }
+        .sheet(item: $transferServer) { server in
+            ServerTransferSheet(server: server)
+        }
         .task { model.bind(session); if model.state.value == nil { await model.load() } }
     }
 
@@ -59,6 +63,11 @@ struct AdminServersView: View {
                         ServerDetailView(serverId: server.id, preview: server)
                     } label: { ServerRow(server: server) }
                     .buttonStyle(.plain)
+                    .contextMenu {
+                        Button { transferServer = server } label: {
+                            Label("Transfer to node…", systemImage: "arrow.left.arrow.right")
+                        }
+                    }
                 }
             }
             .padding(16)

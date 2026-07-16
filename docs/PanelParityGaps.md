@@ -50,19 +50,21 @@ audit, alerts, email/steam settings.
 - [ ] **Knowledge base** — `GET /support/kb[/:slug]`
 - [ ] **Referral program** — `GET /billing/referral`
 
-## 1.3 — staff / admin
-- [ ] **Fleet agent update** — `POST /admin/nodes/update-all-agents`
-- [ ] **Server transfer** — `POST /admin/servers/:id/transfer`, `GET .../transfers`
-- [ ] **Database hosts** — `/admin/database-hosts` (+ test)
-- [ ] **Network overview** — `GET /admin/network`
-- [ ] **Staff members** — `/admin/staff`
-- [ ] **Status incidents + webhooks** — `/admin/status/incidents`, `/admin/status/webhooks`
-- [ ] **Homepage alerts** — `/admin/homepage-alerts`
-- [ ] **Growth analytics** — `GET /admin/growth`
-- [ ] **Support settings** — canned responses, KB authoring, ticket categories
-- [ ] **Bug triage** — `/admin/bugs`
-- [ ] **Settings hub (rest)** — vanity, referrals, backup-storage, express-backups
-- [ ] **Node extras** — maintenance mode, TLS cert pin, DB-host test, backups fleet stats, bootstrap token
+## 1.3 — staff / admin  ✅ complete
+- [x] **Fleet agent update** — `POST /admin/nodes/update-all-agents`. Nodes → ⋯ → Update all agents.
+- [x] **Server transfer** — `POST /admin/servers/:id/transfer`, `GET .../transfers`. Server admin → long-press → Transfer to node.
+- [x] **Database hosts** — `GET/POST/PATCH/DELETE /admin/database-hosts` + `POST /:id/test`. Staff → Database hosts.
+- [x] **Network overview** — `GET /admin/network`. Staff → Network (rollup + per-node telemetry).
+- [x] **Staff members** — `/admin/staff` CRUD. Platform config → Team members.
+- [x] **Status incidents + webhooks** — `/admin/status/incidents` (+ updates) and `/admin/status/webhooks`. Platform config → Status incidents.
+- [x] **Homepage alerts** — `/admin/homepage-alerts` CRUD (distinct from GlobalAlert). Platform config → Homepage alerts.
+- [x] **Growth analytics** — `GET /admin/growth?days=`. Overview → Growth.
+- [x] **Support settings** — canned responses, KB (slug-keyed, no delete), categories. Platform config → Support settings.
+- [x] **Bug triage** — `GET /bugs` + `/bugs/staff` + `/bugs/:id` + `PATCH` + comments. Operations → Bug triage.
+- [x] **Settings hub (rest)** — vanity, referrals, backup-storage (masked + node push), express-backups. Settings.
+- [x] **Node extras** — maintenance mode, TLS cert pin, DB-host test, node capacity, bootstrap token. Nodes → ⋯ menu.
+
+_Not built (out of scope / not in the customer-facing parity goal): admin customer/user CRUD beyond what already shipped, and backups-fleet-stats dashboard (the `GET /admin/backups/stats` DTO is documented but a dedicated screen was deprioritized)._
 
 ## Not applicable
 - SSH keys — the panel has none (SFTP is password-only). No parity item.

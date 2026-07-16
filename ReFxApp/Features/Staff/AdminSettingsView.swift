@@ -21,6 +21,26 @@ struct AdminSettingsView: View {
                     ManageRow(icon: "creditcard", title: "Payment gateways",
                               subtitle: "Stripe & PayPal credentials")
                 }.buttonStyle(.plain)
+
+                NavigationLink { BackupStorageSettingsView() } label: {
+                    ManageRow(icon: "externaldrive.badge.icloud", title: "Backup storage",
+                              subtitle: "S3/R2 offsite backup credentials")
+                }.buttonStyle(.plain)
+
+                NavigationLink { VanitySettingsView() } label: {
+                    ManageRow(icon: "sparkles", title: "Vanity addresses",
+                              subtitle: "Enable & price custom addresses")
+                }.buttonStyle(.plain)
+
+                NavigationLink { ReferralSettingsView() } label: {
+                    ManageRow(icon: "gift", title: "Referral program",
+                              subtitle: "Enable & set the reward")
+                }.buttonStyle(.plain)
+
+                NavigationLink { ExpressBackupSettingsView() } label: {
+                    ManageRow(icon: "arrow.up.bin", title: "Express backups",
+                              subtitle: "Offsite-backup add-on pricing")
+                }.buttonStyle(.plain)
             }
             .padding(16)
         }

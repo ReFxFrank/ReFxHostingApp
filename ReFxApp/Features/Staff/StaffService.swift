@@ -63,6 +63,12 @@ struct StaffService {
         try await client.sendVoid(.post("admin/nodes/\(id)/update-agent"))
     }
 
+    /// Update every node's agent to the latest release in one call.
+    /// `POST /admin/nodes/update-all-agents`. Permission: nodes.manage.
+    func updateAllAgents() async throws {
+        try await client.sendVoid(.post("admin/nodes/update-all-agents"))
+    }
+
     func clearSteamCache(_ id: String) async throws {
         try await client.sendVoid(.post("admin/nodes/\(id)/steam-cache/clear"))
     }
@@ -71,6 +77,33 @@ struct StaffService {
     func agentLatest() async throws -> String? {
         let r: AgentLatest = try await client.send(.get("admin/nodes/agent-latest"))
         return r.latest
+    }
+
+    /// Toggle node maintenance. `POST /nodes/:id/maintenance/{on|off}` — only
+    /// "on"/"true" enable it; anything else disables. Returns the updated node.
+    @discardableResult
+    func setMaintenance(_ id: String, on: Bool) async throws -> NodeAdmin {
+        try await client.send(.post("nodes/\(id)/maintenance/\(on ? "on" : "off")"))
+    }
+
+    /// `GET /nodes/:id/capacity` — overcommit totals vs provisioned usage.
+    func nodeCapacity(_ id: String) async throws -> NodeCapacity {
+        try await client.send(.get("nodes/\(id)/capacity"))
+    }
+
+    /// `POST /admin/nodes/:id/bootstrap-token` — rotate the install token (shown once).
+    func rotateBootstrapToken(_ id: String) async throws -> NodeBootstrapToken {
+        try await client.send(.post("admin/nodes/\(id)/bootstrap-token"))
+    }
+
+    /// `POST /admin/nodes/:id/pin-cert` — trust-on-first-use pin the agent cert.
+    func pinCert(_ id: String) async throws -> PinCertResult {
+        try await client.send(.post("admin/nodes/\(id)/pin-cert"))
+    }
+
+    /// `DELETE /admin/nodes/:id/pin-cert` — clear the pinned cert (204).
+    func unpinCert(_ id: String) async throws {
+        try await client.sendVoid(.delete("admin/nodes/\(id)/pin-cert"))
     }
 
     // MARK: Users
