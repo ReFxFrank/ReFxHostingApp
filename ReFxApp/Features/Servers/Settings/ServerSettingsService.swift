@@ -20,9 +20,12 @@ struct ServerSettingsService {
         try await client.send(.get("servers/\(serverId)/variables"))
     }
 
+    /// `PUT /servers/:id/variables/:envName { value }` — update one egg env var.
+    /// (The env name is a path segment, mirroring `deleteVariable`; the collection
+    /// path has no update route.) Permission: settings.update.
     func setVariable(_ serverId: String, envName: String, value: String) async throws {
         try await client.sendVoid(
-            .patch("servers/\(serverId)/variables", body: VariableBody(envName: envName, value: value)))
+            .put("servers/\(serverId)/variables/\(envName)", body: VariableValueBody(value: value)))
     }
 
     func deleteVariable(_ serverId: String, envName: String) async throws {
@@ -124,7 +127,7 @@ struct ServerSettingsService {
     }
 
     private struct StartupBody: Encodable { let startupCommand: String }
-    private struct VariableBody: Encodable { let envName: String; let value: String }
+    private struct VariableValueBody: Encodable { let value: String }
     private struct AllocationBody: Encodable { let ip: String; let port: Int }
     private struct AutoRestartBody: Encodable { let enabled: Bool }
     private struct JavaVersionBody: Encodable { let version: String }

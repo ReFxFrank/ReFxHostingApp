@@ -88,11 +88,15 @@ struct ResourceSnapshot: Equatable {
     var players: Int?
     var uptimeMs: Double?
 
-    init(live: LiveStats, cpuCores: Double?, diskTotalMb: Double?) {
+    init(live: LiveStats, cpuCores: Double?, memTotalMb: Double?, diskTotalMb: Double?) {
         cpuPct = live.cpuPct
         self.cpuCores = cpuCores
         memUsedMb = live.memUsedMb
-        memTotalMb = live.memTotalMb
+        // The live snapshot's memory ceiling field name has varied server-side
+        // (`memLimitMb` vs `memTotalMb`), so fall back to the server's allocated
+        // RAM — same source Disk uses (Server.diskMb) — so the gauge always has a
+        // denominator instead of rendering an empty ring.
+        self.memTotalMb = live.memTotalMb ?? memTotalMb
         diskUsedMb = live.diskUsedMb
         self.diskTotalMb = diskTotalMb
         netRxBytes = live.netRxBytes

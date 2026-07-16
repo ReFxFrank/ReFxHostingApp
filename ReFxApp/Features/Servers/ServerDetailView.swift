@@ -79,6 +79,12 @@ private struct ServerDetailContent: View {
         .onChange(of: socket.latestStats) { frame in
             if let frame { model.ingest(frame: frame) }
         }
+        // Bridge socket-driven state (power + stats frames) into the view model,
+        // whose liveState drives the Live Activity — otherwise the lock-screen /
+        // Dynamic Island pill freezes on the last optimistic power tap.
+        .onChange(of: socket.liveState) { newState in
+            if let newState { model.liveState = newState }
+        }
     }
 
     private var header: some View {

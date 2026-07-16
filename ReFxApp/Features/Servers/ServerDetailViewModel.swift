@@ -78,8 +78,10 @@ final class ServerDetailViewModel: ObservableObject {
 
     private func loadStats(cpuCores: Double?, diskTotalMb: Double?) async {
         guard let service else { return }
+        let memTotalMb = server?.memoryMb.map(Double.init)
         if let live = try? await service.stats(serverId) {
-            snapshot = ResourceSnapshot(live: live, cpuCores: cpuCores, diskTotalMb: diskTotalMb)
+            snapshot = ResourceSnapshot(live: live, cpuCores: cpuCores,
+                                        memTotalMb: memTotalMb, diskTotalMb: diskTotalMb)
             // The live stats carry the agent's current state — use it so the
             // pill is accurate on open instead of showing the stale REST state
             // until the first socket frame arrives.
@@ -103,7 +105,8 @@ final class ServerDetailViewModel: ObservableObject {
     /// Fold socket stats frames into the gauge snapshot.
     func ingest(frame: StatsFrame) {
         let diskTotal = server?.diskMb.map(Double.init)
-        let memTotal = snapshot?.memTotalMb
+        // Prefer a ceiling we already have; else the server's allocated RAM.
+        let memTotal = snapshot?.memTotalMb ?? server?.memoryMb.map(Double.init)
         snapshot = ResourceSnapshot(frame: frame, previous: snapshot,
                                     cpuCores: server?.cpuCores,
                                     memTotalMb: memTotal, diskTotalMb: diskTotal)
