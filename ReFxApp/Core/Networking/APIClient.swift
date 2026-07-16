@@ -135,7 +135,10 @@ actor APIClient {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.timeoutInterval = 30
 
-        if let body = endpoint.body {
+        if let raw = endpoint.rawBody {
+            request.setValue(endpoint.rawContentType, forHTTPHeaderField: "Content-Type")
+            request.httpBody = raw
+        } else if let body = endpoint.body {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = try encoder.encode(AnyEncodable(body))
         }

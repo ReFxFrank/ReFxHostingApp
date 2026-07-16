@@ -25,9 +25,9 @@ audit, alerts, email/steam settings.
 ---
 
 ## 1.1 — highest customer value
-- [ ] **File upload** — `POST /servers/:id/files/upload-url`, `POST .../upload` *(needs exact contract)*
-- [ ] **File compress / decompress** — `POST .../compress {paths:[String]}→{path}`, `POST .../decompress {path}→void` *(contract known)*
-- [ ] **SFTP details + rotate** — `GET /servers/:id/sftp`, `POST .../sftp/rotate` *(needs response shape)*
+- [x] **File upload** — `POST /servers/:id/files/upload?path=` raw bytes (≤32 MiB; else SFTP). File importer + upload toolbar button.
+- [x] **File compress / decompress** — `POST .../compress {paths}→{path}`, `POST .../decompress {path}`. Swipe + context menu.
+- [x] **SFTP details + rotate** — `GET /servers/:id/sftp` → {host,port,username}; `POST .../sftp/rotate` → {password} (rotate-to-reveal). `SftpDetailsView`.
 - [ ] **Multi-task schedules** — create/edit with `tasks:[{action,payload,offset}]` (COMMAND/POWER/BACKUP) *(contract known)*
 - [ ] **Passkey registration** — `POST /auth/mfa/webauthn/register/options`, `.../register/verify {response,label?}`, `GET/DELETE .../credentials` *(contract known)*
 - [ ] **Profile editing** — `PATCH /account` (name/timezone/locale/address) + `POST /account/avatar` *(infer body from CurrentUser)*

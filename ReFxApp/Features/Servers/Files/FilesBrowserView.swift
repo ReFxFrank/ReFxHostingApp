@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// File manager for one server, rooted at `path`. Directories push another
 /// `FilesBrowserView` (native back gives a breadcrumb); files push the editor.
@@ -12,6 +13,8 @@ struct FilesBrowserView: View {
     @State private var newFolderName = ""
     @State private var renaming: FileEntry?
     @State private var renameText = ""
+    @State private var showImporter = false
+    @State private var showSftp = false
 
     init(serverId: String, path: String = "/") {
         self.serverId = serverId
@@ -34,12 +37,23 @@ struct FilesBrowserView: View {
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                if model.isUploading { ProgressView() }
+                Button { showSftp = true } label: { Image(systemName: "network") }
+                    .accessibilityLabel("SFTP details")
+                Button { showImporter = true } label: { Image(systemName: "arrow.up.doc") }
+                    .accessibilityLabel("Upload file").disabled(model.isUploading)
                 Button { newFolderName = ""; showNewFolder = true } label: {
                     Image(systemName: "folder.badge.plus")
                 }
                 .accessibilityLabel("New folder")
             }
+        }
+        .fileImporter(isPresented: $showImporter, allowedContentTypes: [.item]) { result in
+            if case .success(let url) = result { Task { await model.upload(fileURL: url) } }
+        }
+        .sheet(isPresented: $showSftp) {
+            SftpDetailsView(serverId: serverId).environmentObject(session)
         }
         .alert("New folder", isPresented: $showNewFolder) {
             TextField("Folder name", text: $newFolderName)

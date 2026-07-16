@@ -5,6 +5,7 @@ import UIKit
 final class FilesBrowserViewModel: ObservableObject {
     @Published private(set) var state: LoadState<[FileEntry]> = .idle
     @Published var actionError: String?
+    @Published var isUploading = false
 
     let path: String
     private var service: FilesService?
@@ -71,6 +72,26 @@ final class FilesBrowserViewModel: ObservableObject {
     func decompress(_ entry: FileEntry) async {
         guard let service, let serverId else { return }
         await run(haptic: true) { try await service.decompress(serverId, path: entry.path) }
+    }
+
+    /// Upload a picked local file into this directory (raw bytes, ≤ 32 MiB).
+    func upload(fileURL: URL) async {
+        guard let service, let serverId else { return }
+        let scoped = fileURL.startAccessingSecurityScopedResource()
+        defer { if scoped { fileURL.stopAccessingSecurityScopedResource() } }
+        let destination = join(path, fileURL.lastPathComponent)
+        isUploading = true; actionError = nil
+        defer { isUploading = false }
+        do {
+            let data = try Data(contentsOf: fileURL)
+            _ = try await service.upload(serverId, to: destination, data: data)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            await load()
+        } catch let error as APIError {
+            actionError = error.userMessage
+        } catch {
+            actionError = "Couldn't read or upload that file."
+        }
     }
 
     /// Run a mutation then reload; surface errors in `actionError`.
