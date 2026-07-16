@@ -33,10 +33,10 @@ audit, alerts, email/steam settings.
 - [x] **Profile editing** — `PATCH /account` (firstName/lastName). `EditProfileView` from the Account tab. *(avatar upload deferred)*
 
 ## 1.2 — secondary customer features
-- [ ] **Allocations / ports** — `GET/POST/DELETE /servers/:id/allocations`
-- [ ] **Custom domains / vanity address** — `/servers/:id/domains`, `/vanity-address`
-- [ ] **Update game** — `POST /servers/:id/update` (pull latest build)
-- [ ] **Auto-restart toggle** — `PATCH /servers/:id/auto-restart`
+- [x] **Allocations / ports** — `GET/POST/DELETE /servers/:id/allocations`. `AllocationsView` under Settings → Network.
+- [ ] **Custom domains / vanity address** — `/servers/:id/domains`, `/vanity-address` *(needs response DTO)*
+- [x] **Update game** — `POST /servers/:id/update` (pull latest build). Settings → Maintenance.
+- [ ] **Auto-restart toggle** — `PATCH /servers/:id/auto-restart` *(needs current-value field on GET /servers/:id + PATCH body)*
 - [ ] **Java version picker (MC)** — `GET/PUT /servers/:id/java-version`
 - [ ] **level.dat repair (MC)** — `GET .../world/level-dat-status`, `POST .../restore-level-dat`
 - [ ] **Full TeamSpeak mgmt** — kick/ban/move/unban/channel-limit/license/audit/bandwidth

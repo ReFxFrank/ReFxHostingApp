@@ -60,6 +60,13 @@ final class ServerSettingsViewModel: ObservableObject {
         }
     }
 
+    func updateGame() async {
+        guard let service else { return }
+        await run(successMessage: "Update started.") {
+            try await service.updateGame(self.serverId)
+        }
+    }
+
     private func runStartup(_ work: () async throws -> Void) async {
         message = nil
         isSavingStartup = true
@@ -99,6 +106,7 @@ struct ServerSettingsView: View {
     @State private var newVarName = ""
     @State private var newVarValue = ""
     @State private var confirmReinstall = false
+    @State private var confirmUpdate = false
 
     init(serverId: String) {
         _model = StateObject(wrappedValue: ServerSettingsViewModel(serverId: serverId))
@@ -114,7 +122,9 @@ struct ServerSettingsView: View {
 
             startupSection
             variablesSection
+            networkSection
             accessSection
+            maintenanceSection
             dangerSection
         }
         .scrollContentBackground(.hidden)
@@ -148,6 +158,13 @@ struct ServerSettingsView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This re-runs the install script. Server files may be reset depending on the game. The server will be unavailable during reinstall.")
+        }
+        .confirmationDialog("Update game?", isPresented: $confirmUpdate,
+                            titleVisibility: .visible) {
+            Button("Update") { Task { await model.updateGame() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Pulls the latest game build. Your files and configuration are preserved. The server restarts to apply the update.")
         }
         .task {
             model.bind(session)
@@ -212,6 +229,19 @@ struct ServerSettingsView: View {
         .listRowBackground(Color.appCard)
     }
 
+    private var networkSection: some View {
+        Section {
+            NavigationLink {
+                AllocationsView(serverId: model.serverId)
+            } label: {
+                Label("Ports & allocations", systemImage: "network")
+            }
+        } header: {
+            Text("Network")
+        }
+        .listRowBackground(Color.appCard)
+    }
+
     private var accessSection: some View {
         Section {
             NavigationLink {
@@ -221,6 +251,21 @@ struct ServerSettingsView: View {
             }
         } header: {
             Text("Access")
+        }
+        .listRowBackground(Color.appCard)
+    }
+
+    private var maintenanceSection: some View {
+        Section {
+            Button {
+                confirmUpdate = true
+            } label: {
+                Label("Update game", systemImage: "arrow.down.circle")
+            }
+        } header: {
+            Text("Maintenance")
+        } footer: {
+            Text("Pull the latest game build without changing your files.")
         }
         .listRowBackground(Color.appCard)
     }
