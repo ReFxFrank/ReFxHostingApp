@@ -114,11 +114,11 @@ private struct IncidentCreateSheet: View {
     @State private var impact: IncidentImpact = .degraded
     @State private var status: IncidentStatus = .investigating
     @State private var components: Set<String> = []
-    @State private var body = ""
+    @State private var messageBody = ""
     @State private var notify = false
     @State private var isSaving = false
 
-    private var canSave: Bool { !title.trimmed.isEmpty && !body.trimmed.isEmpty && !isSaving }
+    private var canSave: Bool { !title.trimmed.isEmpty && !messageBody.trimmed.isEmpty && !isSaving }
 
     var body: some View {
         NavigationStack {
@@ -141,7 +141,7 @@ private struct IncidentCreateSheet: View {
                     }
                 }.listRowBackground(Color.appCard)
                 Section("First update") {
-                    TextField("What's happening?", text: $body, axis: .vertical).lineLimit(2...6)
+                    TextField("What's happening?", text: $messageBody, axis: .vertical).lineLimit(2...6)
                     Toggle("Notify customers", isOn: $notify).tint(.appPrimary)
                 }.listRowBackground(Color.appCard)
                 Section {
@@ -150,7 +150,7 @@ private struct IncidentCreateSheet: View {
                         Task {
                             let ok = await onCreate(CreateIncidentBody(
                                 title: title.trimmed, impact: impact.rawValue,
-                                components: Array(components), body: body.trimmed,
+                                components: Array(components), body: messageBody.trimmed,
                                 status: status.rawValue, notify: notify))
                             isSaving = false
                             if ok { dismiss() }
@@ -174,7 +174,7 @@ private struct IncidentDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var status: IncidentStatus = .monitoring
-    @State private var body = ""
+    @State private var messageBody = ""
     @State private var isPosting = false
     @State private var confirmDelete = false
 
@@ -209,11 +209,11 @@ private struct IncidentDetailSheet: View {
                             Picker("Status", selection: $status) {
                                 ForEach(IncidentStatus.allCases.filter { $0 != .unknown }) { Text($0.label).tag($0) }
                             }
-                            TextField("Update message", text: $body, axis: .vertical).lineLimit(2...5)
-                            Button { Task { let ok = await onAddUpdate(status, body.trimmed); if ok { body = "" } } } label: {
+                            TextField("Update message", text: $messageBody, axis: .vertical).lineLimit(2...5)
+                            Button { Task { let ok = await onAddUpdate(status, messageBody.trimmed); if ok { messageBody = "" } } } label: {
                                 HStack { if isPosting { ProgressView() }; Text("Post update") }
                             }
-                            .buttonStyle(.refxSecondary).disabled(body.trimmed.isEmpty)
+                            .buttonStyle(.refxSecondary).disabled(messageBody.trimmed.isEmpty)
                         }
                     }
                     Button("Delete incident", role: .destructive) { confirmDelete = true }

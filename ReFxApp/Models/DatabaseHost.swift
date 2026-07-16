@@ -1,27 +1,5 @@
 import Foundation
 
-enum DbEngine: String, Codable, CaseIterable, Identifiable {
-    case mysql = "MYSQL"
-    case mariadb = "MARIADB"
-    case postgresql = "POSTGRESQL"
-    case unknown
-
-    init(from decoder: Decoder) throws {
-        let raw = try decoder.singleValueContainer().decode(String.self)
-        self = DbEngine(rawValue: raw) ?? .unknown
-    }
-
-    var id: String { rawValue }
-    var label: String {
-        switch self {
-        case .mysql: return "MySQL"
-        case .mariadb: return "MariaDB"
-        case .postgresql: return "PostgreSQL"
-        case .unknown: return "Unknown"
-        }
-    }
-}
-
 /// `GET /admin/database-hosts` (and create/update). The admin password is never
 /// returned (`passwordEnc` is dropped server-side). `databaseCount` is present
 /// only on the LIST response.

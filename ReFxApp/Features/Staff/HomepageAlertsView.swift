@@ -101,7 +101,7 @@ private struct HomepageAlertEditSheet: View {
 
     @State private var type: HomepageAlertType = .info
     @State private var alertTitle = ""
-    @State private var body = ""
+    @State private var messageBody = ""
     @State private var ctaLabel = ""
     @State private var ctaUrl = ""
     @State private var priority = "0"
@@ -109,7 +109,7 @@ private struct HomepageAlertEditSheet: View {
     @State private var dismissible = true
     @State private var isSaving = false
 
-    private var canSave: Bool { !alertTitle.trimmed.isEmpty && !body.trimmed.isEmpty && !isSaving }
+    private var canSave: Bool { !alertTitle.trimmed.isEmpty && !messageBody.trimmed.isEmpty && !isSaving }
 
     var body: some View {
         NavigationStack {
@@ -119,7 +119,7 @@ private struct HomepageAlertEditSheet: View {
                         ForEach(HomepageAlertType.allCases.filter { $0 != .unknown }) { Text($0.label).tag($0) }
                     }
                     TextField("Title", text: $alertTitle)
-                    TextField("Body", text: $body, axis: .vertical).lineLimit(2...6)
+                    TextField("Body", text: $messageBody, axis: .vertical).lineLimit(2...6)
                 }.listRowBackground(Color.appCard)
                 Section("Call to action (optional)") {
                     TextField("Button label", text: $ctaLabel)
@@ -136,7 +136,7 @@ private struct HomepageAlertEditSheet: View {
                         isSaving = true
                         Task {
                             let ok = await onSave(HomepageAlertBody(
-                                type: type.rawValue, title: alertTitle.trimmed, body: body.trimmed,
+                                type: type.rawValue, title: alertTitle.trimmed, body: messageBody.trimmed,
                                 isActive: isActive,
                                 ctaLabel: ctaLabel.trimmed.isEmpty ? nil : ctaLabel.trimmed,
                                 ctaUrl: ctaUrl.trimmed.isEmpty ? nil : ctaUrl.trimmed,
@@ -155,7 +155,7 @@ private struct HomepageAlertEditSheet: View {
             .onAppear {
                 if let alert {
                     type = alert.type == .unknown ? .info : alert.type
-                    alertTitle = alert.title; body = alert.body
+                    alertTitle = alert.title; messageBody = alert.body
                     ctaLabel = alert.ctaLabel ?? ""; ctaUrl = alert.ctaUrl ?? ""
                     priority = String(alert.priority); isActive = alert.isActive; dismissible = alert.dismissible
                 }

@@ -18,10 +18,8 @@ final class ServerTransferViewModel: ObservableObject {
 
     func load() async {
         guard let service else { return }
-        async let nodesTask = try? await service.nodes()
-        async let transfersTask = try? await service.serverTransfers(server.id)
-        nodes = (await nodesTask) ?? []
-        transfers = (await transfersTask) ?? []
+        nodes = (try? await service.nodes()) ?? []
+        transfers = (try? await service.serverTransfers(server.id)) ?? []
     }
 
     func transfer() async -> Bool {
