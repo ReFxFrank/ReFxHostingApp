@@ -43,4 +43,44 @@ extension StaffService {
         try await client.send(.get("admin/growth",
                                     query: [URLQueryItem(name: "days", value: String(days))]))
     }
+
+    // MARK: Staff members  (content.manage)
+
+    func staffMembers() async throws -> [StaffMember] {
+        try await client.send(.get("admin/staff"))
+    }
+
+    @discardableResult
+    func createStaffMember(_ body: StaffMemberBody) async throws -> StaffMember {
+        try await client.send(.post("admin/staff", body: body))
+    }
+
+    @discardableResult
+    func updateStaffMember(_ id: String, _ body: StaffMemberBody) async throws -> StaffMember {
+        try await client.send(.patch("admin/staff/\(id)", body: body))
+    }
+
+    func deleteStaffMember(_ id: String) async throws {
+        try await client.sendVoid(.delete("admin/staff/\(id)"))
+    }
+
+    // MARK: Homepage alerts  (content.manage)
+
+    func homepageAlerts() async throws -> [HomepageAlert] {
+        try await client.send(.get("admin/homepage-alerts"))
+    }
+
+    @discardableResult
+    func createHomepageAlert(_ body: HomepageAlertBody) async throws -> HomepageAlert {
+        try await client.send(.post("admin/homepage-alerts", body: body))
+    }
+
+    @discardableResult
+    func updateHomepageAlert(_ id: String, _ body: HomepageAlertBody) async throws -> HomepageAlert {
+        try await client.send(.patch("admin/homepage-alerts/\(id)", body: body))
+    }
+
+    func deleteHomepageAlert(_ id: String) async throws {
+        try await client.sendVoid(.delete("admin/homepage-alerts/\(id)"))
+    }
 }

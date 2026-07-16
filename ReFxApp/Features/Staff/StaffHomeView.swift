@@ -135,6 +135,16 @@ struct StaffHomeView: View {
                           subtitle: "Regions for grouping nodes")
             }.buttonStyle(.plain)
 
+            NavigationLink { StaffMembersView() } label: {
+                ManageRow(icon: "person.3", title: "Team members",
+                          subtitle: "Public “meet the team” page")
+            }.buttonStyle(.plain)
+
+            NavigationLink { HomepageAlertsView() } label: {
+                ManageRow(icon: "megaphone.fill", title: "Homepage alerts",
+                          subtitle: "Storefront banners")
+            }.buttonStyle(.plain)
+
             NavigationLink { AdminSettingsView() } label: {
                 ManageRow(icon: "gearshape", title: "Settings",
                           subtitle: "Email, Steam, payment gateways")
