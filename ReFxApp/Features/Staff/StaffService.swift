@@ -63,6 +63,12 @@ struct StaffService {
         try await client.sendVoid(.post("admin/nodes/\(id)/update-agent"))
     }
 
+    /// Update every node's agent to the latest release in one call.
+    /// `POST /admin/nodes/update-all-agents`. Permission: nodes.manage.
+    func updateAllAgents() async throws {
+        try await client.sendVoid(.post("admin/nodes/update-all-agents"))
+    }
+
     func clearSteamCache(_ id: String) async throws {
         try await client.sendVoid(.post("admin/nodes/\(id)/steam-cache/clear"))
     }

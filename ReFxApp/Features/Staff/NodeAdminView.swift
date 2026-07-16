@@ -7,6 +7,7 @@ final class NodeAdminViewModel: ObservableObject {
     @Published var actionMessage: String?
     @Published var pingResults: [String: String] = [:]
     @Published var busyNodeId: String?
+    @Published var isUpdatingFleet = false
     /// Latest published agent release tag, for the "update available" badge.
     @Published var latestAgent: String?
 
@@ -51,6 +52,16 @@ final class NodeAdminViewModel: ObservableObject {
         await act(node, success: "Cleared Steam cache on \(node.name).") { try await $0.clearSteamCache(node.id) }
     }
 
+    func updateAllAgents() async {
+        guard let service, !isUpdatingFleet else { return }
+        isUpdatingFleet = true
+        defer { isUpdatingFleet = false }
+        actionMessage = nil
+        do { try await service.updateAllAgents(); actionMessage = "Fleet agent update started on all nodes." }
+        catch let error as APIError { actionMessage = error.userMessage }
+        catch { actionMessage = "Couldn't start the fleet update." }
+    }
+
     private func act(_ node: NodeAdmin,
                      success: String,
                      _ work: (StaffService) async throws -> Void) async {
@@ -68,6 +79,7 @@ struct NodeAdminView: View {
     @EnvironmentObject private var session: AppSession
     @StateObject private var model = NodeAdminViewModel()
     @State private var showAddNode = false
+    @State private var confirmFleetUpdate = false
 
     var body: some View {
         AsyncStateView(
@@ -82,12 +94,26 @@ struct NodeAdminView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { showAddNode = true } label: { Image(systemName: "plus") }
-                    .accessibilityLabel("Add node")
+                Menu {
+                    Button { showAddNode = true } label: { Label("Add node", systemImage: "plus") }
+                    Button {
+                        confirmFleetUpdate = true
+                    } label: { Label("Update all agents", systemImage: "arrow.down.circle.fill") }
+                        .disabled(model.isUpdatingFleet)
+                } label: {
+                    if model.isUpdatingFleet { ProgressView() } else { Image(systemName: "ellipsis.circle") }
+                }
+                .accessibilityLabel("Node actions")
             }
         }
         .sheet(isPresented: $showAddNode) {
             AddNodeView { Task { await model.load() } }
+        }
+        .confirmationDialog("Update all node agents?", isPresented: $confirmFleetUpdate, titleVisibility: .visible) {
+            Button("Update all agents") { Task { await model.updateAllAgents() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Every node's agent self-updates to the latest release and briefly reconnects. Servers keep running.")
         }
         .task { model.bind(session); if model.state.value == nil { await model.load() } }
     }

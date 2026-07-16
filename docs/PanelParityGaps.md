@@ -51,7 +51,7 @@ audit, alerts, email/steam settings.
 - [ ] **Referral program** — `GET /billing/referral`
 
 ## 1.3 — staff / admin
-- [ ] **Fleet agent update** — `POST /admin/nodes/update-all-agents`
+- [x] **Fleet agent update** — `POST /admin/nodes/update-all-agents`. Node health → ⋯ menu → Update all agents.
 - [ ] **Server transfer** — `POST /admin/servers/:id/transfer`, `GET .../transfers`
 - [ ] **Database hosts** — `/admin/database-hosts` (+ test)
 - [ ] **Network overview** — `GET /admin/network`
