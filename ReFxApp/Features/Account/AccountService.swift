@@ -97,6 +97,45 @@ struct AccountService {
     private struct TotpCodeBody: Encodable { let code: String }
     private struct CreateApiKeyBody: Encodable { let name: String; let scopes: [String] }
 
+    // MARK: Passkeys (WebAuthn registration — authenticated)
+
+    func passkeys() async throws -> [PasskeyCredential] {
+        try await client.send(.get("auth/mfa/webauthn/credentials"))
+    }
+
+    func passkeyRegisterOptions() async throws -> PasskeyRegistrationOptions {
+        try await client.send(.post("auth/mfa/webauthn/register/options"))
+    }
+
+    /// Verify a freshly-created passkey. `label` names it in the account UI.
+    func passkeyRegisterVerify(response: WebAuthnRegistrationResponse, label: String?) async throws {
+        try await client.sendVoid(
+            .post("auth/mfa/webauthn/register/verify",
+                  body: PasskeyVerifyBody(response: response, label: label)))
+    }
+
+    func deletePasskey(_ id: String) async throws {
+        try await client.sendVoid(.delete("auth/mfa/webauthn/credentials/\(id)"))
+    }
+
+    private struct PasskeyVerifyBody: Encodable {
+        let response: WebAuthnRegistrationResponse
+        let label: String?
+    }
+
+    // MARK: Profile
+
+    /// `PATCH /account` — update the signed-in user's profile fields.
+    func updateProfile(firstName: String, lastName: String) async throws -> CurrentUser {
+        try await client.send(
+            .patch("account", body: UpdateProfileBody(firstName: firstName, lastName: lastName)))
+    }
+
+    private struct UpdateProfileBody: Encodable {
+        let firstName: String
+        let lastName: String
+    }
+
     // MARK: Account lifecycle (GDPR)
 
     /// `GET /account/export` — everything the platform holds for this account,
