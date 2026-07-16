@@ -203,7 +203,3 @@ struct FileRow: View {
         return entry.isLikelyText ? "doc.text" : "doc"
     }
 }
-
-private extension String {
-    var trimmed: String { trimmingCharacters(in: .whitespacesAndNewlines) }
-}

@@ -115,7 +115,7 @@ private struct CannedEditSheet: View {
         Button {
             saving = true
             Task {
-                let parsed = tags.split(separator: ",").map { $0.trimmed }.filter { !$0.isEmpty }
+                let parsed = tags.split(separator: ",").map { String($0).trimmed }.filter { !$0.isEmpty }
                 let ok = await onSave(CannedResponseBody(title: t.trimmed, body: b.trimmed, tags: parsed))
                 saving = false; if ok { dismiss() }
             }

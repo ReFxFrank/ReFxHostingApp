@@ -43,7 +43,7 @@ struct VanitySettingsView: View {
             } footer: { Text("Fee is in minor units (200 = $2.00). Reserved words are merged with the built-in list.") }
             .listRowBackground(Color.appCard)
             SaveSection(isSaving: model.isSaving, title: "Save vanity settings") {
-                let words = reserved.split(whereSeparator: { $0 == "," || $0 == "\n" }).map { $0.trimmed }.filter { !$0.isEmpty }
+                let words = reserved.split(whereSeparator: { $0 == "," || $0 == "\n" }).map { String($0).trimmed }.filter { !$0.isEmpty }
                 Task { await model.save(SetVanitySettingsBody(enabled: enabled, feeMinor: Int(feeMinor), reservedWords: words)) }
             }
         }
