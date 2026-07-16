@@ -33,6 +33,17 @@ struct ServersService {
         try await client.send(.get("servers/\(id)/stats"))
     }
 
+    /// `GET /servers/:id/players` — online players (Minecraft only).
+    func players(_ id: String) async throws -> PlayersResult {
+        try await client.send(.get("servers/\(id)/players"))
+    }
+
+    /// `GET /servers/:id/stats/history?range=` — historical samples, oldest→newest.
+    func statsHistory(_ id: String, range: StatsRange) async throws -> [ServerStat] {
+        try await client.send(.get("servers/\(id)/stats/history",
+                                    query: [URLQueryItem(name: "range", value: range.rawValue)]))
+    }
+
     private struct PowerBody: Encodable { let signal: String }
     private struct CommandBody: Encodable { let command: String }
 }

@@ -15,5 +15,10 @@ struct SwitchGameService {
                                          body: SwitchBody(templateId: templateId, keepData: keepData)))
     }
 
+    /// `GET /servers/:id/game-history` — past game switches (newest first).
+    func history(_ serverId: String) async throws -> [GameHistoryEntry] {
+        try await client.send(.get("servers/\(serverId)/game-history"))
+    }
+
     private struct SwitchBody: Encodable { let templateId: String; let keepData: Bool }
 }

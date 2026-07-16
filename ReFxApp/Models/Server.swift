@@ -94,7 +94,14 @@ struct Server: Codable, Identifiable, Equatable {
     let template: GameTemplateRef?
     let node: NodeRef?
     let primaryAllocation: Allocation?
+    /// Server detail (`GET /servers/:id`) includes the agent environment map.
+    /// `REFX_AUTO_RESTART` drives the crash auto-restart toggle.
+    let environment: [String: String]?
 
     var gameName: String { template?.name ?? "No game" }
     var connectionString: String? { primaryAllocation?.connectionString }
+
+    /// Crash auto-restart. The agent treats an absent key as ON, so only the
+    /// explicit string `"false"` means disabled (matches the web client).
+    var autoRestartEnabled: Bool { environment?["REFX_AUTO_RESTART"] != "false" }
 }

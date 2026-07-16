@@ -55,6 +55,18 @@ private struct ServerDetailContent: View {
                     GaugeRow(snapshot: snapshot)
                 }
 
+                NavigationLink {
+                    StatsHistoryView(serverId: model.serverId)
+                } label: {
+                    ManageRow(icon: "chart.xyaxis.line", title: "Resource history",
+                              subtitle: "CPU, memory & players over time")
+                }
+                .buttonStyle(.plain)
+
+                if let players = model.players, players.supported {
+                    PlayersCard(players: players)
+                }
+
                 if let error = model.actionError {
                     Text(error).font(.footnote).foregroundStyle(.appDestructive)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -66,6 +78,12 @@ private struct ServerDetailContent: View {
         }
         .onChange(of: socket.latestStats) { frame in
             if let frame { model.ingest(frame: frame) }
+        }
+        // Bridge socket-driven state (power + stats frames) into the view model,
+        // whose liveState drives the Live Activity — otherwise the lock-screen /
+        // Dynamic Island pill freezes on the last optimistic power tap.
+        .onChange(of: socket.liveState) { newState in
+            if let newState { model.liveState = newState }
         }
     }
 
@@ -229,6 +247,53 @@ struct ConnectionIndicator: View {
         case .connected: return .appSuccess
         case .connecting, .reconnecting: return .appWarning
         default: return .appMuted
+        }
+    }
+}
+
+/// Online-players card (Minecraft). Shows the count and the current player names
+/// when the server responds to a Server List Ping.
+struct PlayersCard: View {
+    let players: PlayersResult
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Eyebrow("Players", systemImage: "person.2.fill")
+                Spacer()
+                if let count = players.players {
+                    Text("\(count.online) / \(count.max)")
+                        .font(.subheadline.monospacedDigit().weight(.semibold))
+                        .foregroundStyle(.appForeground)
+                }
+            }
+            if !players.online {
+                Text("Server offline").font(.caption).foregroundStyle(.appMuted)
+            } else if let names = players.players?.names, !names.isEmpty {
+                FlowNames(names: names)
+            } else {
+                Text("No players online").font(.caption).foregroundStyle(.appMuted)
+            }
+        }
+        .padding(Theme.cardPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardSurface()
+    }
+}
+
+/// Simple wrapping list of player-name chips.
+private struct FlowNames: View {
+    let names: [String]
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 90), spacing: 6)], alignment: .leading, spacing: 6) {
+            ForEach(names, id: \.self) { name in
+                Text(name)
+                    .font(.caption).lineLimit(1)
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(Color.appPrimary.opacity(0.12))
+                    .foregroundStyle(.appForeground)
+                    .clipShape(Capsule())
+            }
         }
     }
 }

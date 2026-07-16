@@ -57,6 +57,16 @@ struct SwitchGameView: View {
         .screenBackground()
         .navigationTitle("Switch Game")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    GameHistoryView(serverId: model.serverId)
+                } label: {
+                    Image(systemName: "clock.arrow.circlepath")
+                }
+                .accessibilityLabel("Game history")
+            }
+        }
         .confirmationDialog(
             selected.map { "Switch to \($0.name)?" } ?? "",
             isPresented: Binding(get: { selected != nil }, set: { if !$0 { selected = nil } }),

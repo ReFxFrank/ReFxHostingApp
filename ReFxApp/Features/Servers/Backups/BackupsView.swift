@@ -58,6 +58,10 @@ final class BackupsViewModel: ObservableObject {
         await run { try await $0.delete(self.serverId, backupId: backup.id) }
     }
 
+    func toggleLock(_ backup: Backup) async {
+        await run { try await $0.setLock(self.serverId, backupId: backup.id, isLocked: !backup.locked) }
+    }
+
     func downloadURL(_ backup: Backup) async -> URL? {
         guard let service else { return nil }
         return try? await service.downloadURL(serverId, backupId: backup.id)
@@ -172,6 +176,12 @@ struct BackupsView: View {
                             } label: { Label("Download", systemImage: "arrow.down") }
                                 .tint(.appPrimary)
                         }
+                        Button {
+                            Task { await model.toggleLock(backup) }
+                        } label: {
+                            Label(backup.locked ? "Unlock" : "Lock",
+                                  systemImage: backup.locked ? "lock.open" : "lock")
+                        }.tint(.appMuted)
                     }
             }
         }

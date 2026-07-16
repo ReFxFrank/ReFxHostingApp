@@ -10,9 +10,16 @@ final class ServerSettingsViewModel: ObservableObject {
     @Published var message: String?
     @Published var isError = false
     @Published private(set) var isSavingStartup = false
+    @Published var autoRestart = true
+    @Published private(set) var java: JavaVersionSelector?
+    /// Custom-domains module is WEB_APP-only; the endpoint 400s otherwise, so we
+    /// probe it and only surface the row when it's actually supported.
+    @Published private(set) var domainsSupported = false
+    @Published private(set) var vanitySupported = false
 
     let serverId: String
     private var service: ServerSettingsService?
+    private var servers: ServersService?
 
     init(serverId: String) { self.serverId = serverId }
 
@@ -20,6 +27,7 @@ final class ServerSettingsViewModel: ObservableObject {
 
     func bind(_ session: AppSession) {
         if service == nil { service = session.serverSettings }
+        if servers == nil { servers = session.servers }
     }
 
     func load() async {
@@ -34,6 +42,15 @@ final class ServerSettingsViewModel: ObservableObject {
         if let vars = try? await service.variables(serverId) {
             variables = vars.sorted { $0.envName < $1.envName }
         }
+        // Auto-restart state lives on the server's environment map.
+        if let server = try? await servers?.detail(serverId) {
+            autoRestart = server.autoRestartEnabled
+        }
+        // Java version is Minecraft-only (400 otherwise) — tolerate absence.
+        java = try? await service.javaVersion(serverId)
+        // Probe the WEB_APP-only modules; show the rows only when supported.
+        domainsSupported = (try? await service.domains(serverId)) != nil
+        if let vanity = try? await service.vanityStatus(serverId) { vanitySupported = vanity.enabled }
     }
 
     func saveStartup() async {
@@ -57,6 +74,37 @@ final class ServerSettingsViewModel: ObservableObject {
         guard let service else { return }
         await run(successMessage: "Reinstall started.") {
             try await service.reinstall(self.serverId)
+        }
+    }
+
+    func updateGame() async {
+        guard let service else { return }
+        await run(successMessage: "Update started.") {
+            try await service.updateGame(self.serverId)
+        }
+    }
+
+    func setAutoRestart(_ enabled: Bool) async {
+        guard let service else { return }
+        // Optimistic; the toggle binding already reflects `enabled`.
+        message = nil
+        do {
+            try await service.setAutoRestart(serverId, enabled: enabled)
+            flash(enabled ? "Auto-restart on." : "Auto-restart off.", error: false)
+        } catch let error as APIError {
+            autoRestart = !enabled   // revert
+            flash(error.userMessage, error: true)
+        } catch {
+            autoRestart = !enabled
+            flash("Couldn't change auto-restart.", error: true)
+        }
+    }
+
+    func setJava(_ version: String) async {
+        guard let service else { return }
+        await run(successMessage: "Java version set.") {
+            try await service.setJavaVersion(self.serverId, version: version)
+            self.java = try? await service.javaVersion(self.serverId)
         }
     }
 
@@ -99,6 +147,7 @@ struct ServerSettingsView: View {
     @State private var newVarName = ""
     @State private var newVarValue = ""
     @State private var confirmReinstall = false
+    @State private var confirmUpdate = false
 
     init(serverId: String) {
         _model = StateObject(wrappedValue: ServerSettingsViewModel(serverId: serverId))
@@ -113,8 +162,12 @@ struct ServerSettingsView: View {
             }
 
             startupSection
+            javaSection
             variablesSection
+            behaviorSection
+            networkSection
             accessSection
+            maintenanceSection
             dangerSection
         }
         .scrollContentBackground(.hidden)
@@ -148,6 +201,13 @@ struct ServerSettingsView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This re-runs the install script. Server files may be reset depending on the game. The server will be unavailable during reinstall.")
+        }
+        .confirmationDialog("Update game?", isPresented: $confirmUpdate,
+                            titleVisibility: .visible) {
+            Button("Update") { Task { await model.updateGame() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Pulls the latest game build. Your files and configuration are preserved. The server restarts to apply the update.")
         }
         .task {
             model.bind(session)
@@ -212,6 +272,67 @@ struct ServerSettingsView: View {
         .listRowBackground(Color.appCard)
     }
 
+    @ViewBuilder private var javaSection: some View {
+        if let java = model.java {
+            Section {
+                Picker("Java version", selection: Binding(
+                    get: { java.selected },
+                    set: { sel in Task { await model.setJava(sel) } })) {
+                    Text("Automatic (\(java.auto))").tag("auto")
+                    ForEach(java.options, id: \.self) { major in
+                        Text("Java \(major)").tag(String(major))
+                    }
+                }
+            } header: {
+                Text("Java version")
+            } footer: {
+                Text("Currently using Java \(java.effective). Automatic picks the right JVM for your Minecraft version.")
+            }
+            .listRowBackground(Color.appCard)
+        }
+    }
+
+    private var behaviorSection: some View {
+        Section {
+            Toggle("Auto-restart on crash", isOn: Binding(
+                get: { model.autoRestart },
+                set: { on in model.autoRestart = on; Task { await model.setAutoRestart(on) } }))
+                .tint(.appPrimary)
+        } header: {
+            Text("Behavior")
+        } footer: {
+            Text("Automatically restart the server if it crashes.")
+        }
+        .listRowBackground(Color.appCard)
+    }
+
+    private var networkSection: some View {
+        Section {
+            NavigationLink {
+                AllocationsView(serverId: model.serverId)
+            } label: {
+                Label("Ports & allocations", systemImage: "network")
+            }
+            if model.vanitySupported {
+                NavigationLink {
+                    VanityAddressView(serverId: model.serverId)
+                } label: {
+                    Label("Vanity address", systemImage: "sparkles")
+                }
+            }
+            if model.domainsSupported {
+                NavigationLink {
+                    DomainsView(serverId: model.serverId)
+                } label: {
+                    Label("Custom domains", systemImage: "globe")
+                }
+            }
+        } header: {
+            Text("Network")
+        }
+        .listRowBackground(Color.appCard)
+    }
+
     private var accessSection: some View {
         Section {
             NavigationLink {
@@ -221,6 +342,21 @@ struct ServerSettingsView: View {
             }
         } header: {
             Text("Access")
+        }
+        .listRowBackground(Color.appCard)
+    }
+
+    private var maintenanceSection: some View {
+        Section {
+            Button {
+                confirmUpdate = true
+            } label: {
+                Label("Update game", systemImage: "arrow.down.circle")
+            }
+        } header: {
+            Text("Maintenance")
+        } footer: {
+            Text("Pull the latest game build without changing your files.")
         }
         .listRowBackground(Color.appCard)
     }

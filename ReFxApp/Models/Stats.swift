@@ -27,6 +27,51 @@ struct StatsFrame: Decodable, Equatable {
     let players: Int?
 }
 
+/// `GET /servers/:id/players` — Minecraft Server List Ping. Non-MC templates
+/// return `supported:false`; `players`/`version`/`latencyMs` are present only
+/// when `online:true`.
+struct PlayersResult: Decodable, Equatable {
+    let supported: Bool
+    let online: Bool
+    let players: PlayerCount?
+    let version: String?
+    let latencyMs: Int?
+
+    struct PlayerCount: Decodable, Equatable {
+        let online: Int
+        let max: Int
+        let names: [String]
+    }
+}
+
+/// One historical sample from `GET /servers/:id/stats/history` (Prisma
+/// `ServerStat`). BigInt net counters arrive as JSON numbers.
+struct ServerStat: Decodable, Identifiable, Equatable {
+    let id: String
+    let cpuPct: Double
+    let memUsedMb: Int
+    let diskUsedMb: Int
+    let netRxBytes: Double
+    let netTxBytes: Double
+    let players: Int?
+    let recordedAt: Date
+}
+
+/// Time windows accepted by `GET /servers/:id/stats/history?range=`.
+enum StatsRange: String, CaseIterable, Identifiable {
+    case h1 = "1h", h6 = "6h", h24 = "24h", d7 = "7d", d30 = "30d"
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .h1: return "1H"
+        case .h6: return "6H"
+        case .h24: return "24H"
+        case .d7: return "7D"
+        case .d30: return "30D"
+        }
+    }
+}
+
 /// Unified view-model value the gauges render, fed by either source.
 struct ResourceSnapshot: Equatable {
     var cpuPct: Double
@@ -43,11 +88,15 @@ struct ResourceSnapshot: Equatable {
     var players: Int?
     var uptimeMs: Double?
 
-    init(live: LiveStats, cpuCores: Double?, diskTotalMb: Double?) {
+    init(live: LiveStats, cpuCores: Double?, memTotalMb: Double?, diskTotalMb: Double?) {
         cpuPct = live.cpuPct
         self.cpuCores = cpuCores
         memUsedMb = live.memUsedMb
-        memTotalMb = live.memTotalMb
+        // The live snapshot's memory ceiling field name has varied server-side
+        // (`memLimitMb` vs `memTotalMb`), so fall back to the server's allocated
+        // RAM — same source Disk uses (Server.diskMb) — so the gauge always has a
+        // denominator instead of rendering an empty ring.
+        self.memTotalMb = live.memTotalMb ?? memTotalMb
         diskUsedMb = live.diskUsedMb
         self.diskTotalMb = diskTotalMb
         netRxBytes = live.netRxBytes

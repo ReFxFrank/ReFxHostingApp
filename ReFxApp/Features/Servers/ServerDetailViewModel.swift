@@ -6,6 +6,7 @@ import UIKit
 final class ServerDetailViewModel: ObservableObject {
     @Published private(set) var detail: LoadState<Server>
     @Published private(set) var snapshot: ResourceSnapshot?
+    @Published private(set) var players: PlayersResult?
     @Published private(set) var powerInFlight: PowerSignal?
     @Published var actionError: String?
 
@@ -64,6 +65,8 @@ final class ServerDetailViewModel: ObservableObject {
             detail = .loaded(server)
             if liveState == nil { liveState = server.state }
             await loadStats(cpuCores: server.cpuCores, diskTotalMb: server.diskMb.map(Double.init))
+            // Player list is Minecraft-only; tolerate 400/unsupported silently.
+            players = try? await service.players(serverId)
         } catch let error as APIError {
             if detail.value == nil { detail = .failed(error) }
         } catch {
@@ -75,8 +78,10 @@ final class ServerDetailViewModel: ObservableObject {
 
     private func loadStats(cpuCores: Double?, diskTotalMb: Double?) async {
         guard let service else { return }
+        let memTotalMb = server?.memoryMb.map(Double.init)
         if let live = try? await service.stats(serverId) {
-            snapshot = ResourceSnapshot(live: live, cpuCores: cpuCores, diskTotalMb: diskTotalMb)
+            snapshot = ResourceSnapshot(live: live, cpuCores: cpuCores,
+                                        memTotalMb: memTotalMb, diskTotalMb: diskTotalMb)
             // The live stats carry the agent's current state — use it so the
             // pill is accurate on open instead of showing the stale REST state
             // until the first socket frame arrives.
@@ -100,7 +105,8 @@ final class ServerDetailViewModel: ObservableObject {
     /// Fold socket stats frames into the gauge snapshot.
     func ingest(frame: StatsFrame) {
         let diskTotal = server?.diskMb.map(Double.init)
-        let memTotal = snapshot?.memTotalMb
+        // Prefer a ceiling we already have; else the server's allocated RAM.
+        let memTotal = snapshot?.memTotalMb ?? server?.memoryMb.map(Double.init)
         snapshot = ResourceSnapshot(frame: frame, previous: snapshot,
                                     cpuCores: server?.cpuCores,
                                     memTotalMb: memTotal, diskTotalMb: diskTotal)

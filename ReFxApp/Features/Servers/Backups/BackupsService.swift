@@ -24,6 +24,13 @@ struct BackupsService {
         try await client.sendVoid(.delete("servers/\(serverId)/backups/\(backupId)"))
     }
 
+    /// `PATCH /servers/:id/backups/:backupId { isLocked }`. Locking protects a
+    /// backup from deletion/rotation. Permission: backup.delete.
+    func setLock(_ serverId: String, backupId: String, isLocked: Bool) async throws {
+        try await client.sendVoid(
+            .patch("servers/\(serverId)/backups/\(backupId)", body: LockBody(isLocked: isLocked)))
+    }
+
     func downloadURL(_ serverId: String, backupId: String) async throws -> URL? {
         let signed: SignedURL = try await client.send(
             .get("servers/\(serverId)/backups/\(backupId)/download"))
@@ -31,4 +38,5 @@ struct BackupsService {
     }
 
     private struct CreateBody: Encodable { let name: String }
+    private struct LockBody: Encodable { let isLocked: Bool }
 }
