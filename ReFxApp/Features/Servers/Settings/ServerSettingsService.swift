@@ -47,11 +47,13 @@ struct ServerSettingsService {
         try await client.send(.get("servers/\(serverId)/allocations"))
     }
 
-    /// `POST /servers/:id/allocations` — assign an additional port from the
-    /// node's pool (no body; the node picks a free port). Permission:
-    /// allocation.create.
-    func addAllocation(_ serverId: String) async throws {
-        try await client.sendVoid(.post("servers/\(serverId)/allocations"))
+    /// `POST /servers/:id/allocations` — attach a specific `ip:port` allocation
+    /// to the server. There is no auto-assign; the caller supplies a free port on
+    /// the server's node (the primary allocation's IP is the usual choice).
+    /// Permission: allocation.create. 409 if the port belongs to another server.
+    func addAllocation(_ serverId: String, ip: String, port: Int) async throws {
+        try await client.sendVoid(
+            .post("servers/\(serverId)/allocations", body: AllocationBody(ip: ip, port: port)))
     }
 
     /// `DELETE /servers/:id/allocations/:allocationId`. Permission:
@@ -60,6 +62,38 @@ struct ServerSettingsService {
         try await client.sendVoid(.delete("servers/\(serverId)/allocations/\(allocationId)"))
     }
 
+    // MARK: Auto-restart
+
+    /// `PATCH /servers/:id/auto-restart { enabled }`. Permission: settings.update.
+    func setAutoRestart(_ serverId: String, enabled: Bool) async throws {
+        try await client.sendVoid(
+            .patch("servers/\(serverId)/auto-restart", body: AutoRestartBody(enabled: enabled)))
+    }
+
+    // MARK: Java version (Minecraft)
+
+    /// `GET /servers/:id/java-version`. Returns 400 for non-Java servers.
+    func javaVersion(_ serverId: String) async throws -> JavaVersionSelector {
+        try await client.send(.get("servers/\(serverId)/java-version"))
+    }
+
+    /// `PUT /servers/:id/java-version { version }` — "auto" or a major like "21".
+    func setJavaVersion(_ serverId: String, version: String) async throws {
+        try await client.sendVoid(
+            .put("servers/\(serverId)/java-version", body: JavaVersionBody(version: version)))
+    }
+
     private struct StartupBody: Encodable { let startupCommand: String }
     private struct VariableBody: Encodable { let envName: String; let value: String }
+    private struct AllocationBody: Encodable { let ip: String; let port: Int }
+    private struct AutoRestartBody: Encodable { let enabled: Bool }
+    private struct JavaVersionBody: Encodable { let version: String }
+}
+
+/// `GET /servers/:id/java-version` selector.
+struct JavaVersionSelector: Decodable, Equatable {
+    let selected: String   // "auto" or a major as string
+    let effective: Int     // major actually used now
+    let auto: Int          // what auto-selection would pick
+    let options: [Int]     // available majors
 }

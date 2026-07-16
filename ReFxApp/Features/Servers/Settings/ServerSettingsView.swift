@@ -10,9 +10,12 @@ final class ServerSettingsViewModel: ObservableObject {
     @Published var message: String?
     @Published var isError = false
     @Published private(set) var isSavingStartup = false
+    @Published var autoRestart = true
+    @Published private(set) var java: JavaVersionSelector?
 
     let serverId: String
     private var service: ServerSettingsService?
+    private var servers: ServersService?
 
     init(serverId: String) { self.serverId = serverId }
 
@@ -20,6 +23,7 @@ final class ServerSettingsViewModel: ObservableObject {
 
     func bind(_ session: AppSession) {
         if service == nil { service = session.serverSettings }
+        if servers == nil { servers = session.servers }
     }
 
     func load() async {
@@ -34,6 +38,12 @@ final class ServerSettingsViewModel: ObservableObject {
         if let vars = try? await service.variables(serverId) {
             variables = vars.sorted { $0.envName < $1.envName }
         }
+        // Auto-restart state lives on the server's environment map.
+        if let server = try? await servers?.detail(serverId) {
+            autoRestart = server.autoRestartEnabled
+        }
+        // Java version is Minecraft-only (400 otherwise) — tolerate absence.
+        java = try? await service.javaVersion(serverId)
     }
 
     func saveStartup() async {
@@ -64,6 +74,30 @@ final class ServerSettingsViewModel: ObservableObject {
         guard let service else { return }
         await run(successMessage: "Update started.") {
             try await service.updateGame(self.serverId)
+        }
+    }
+
+    func setAutoRestart(_ enabled: Bool) async {
+        guard let service else { return }
+        // Optimistic; the toggle binding already reflects `enabled`.
+        message = nil
+        do {
+            try await service.setAutoRestart(serverId, enabled: enabled)
+            flash(enabled ? "Auto-restart on." : "Auto-restart off.", error: false)
+        } catch let error as APIError {
+            autoRestart = !enabled   // revert
+            flash(error.userMessage, error: true)
+        } catch {
+            autoRestart = !enabled
+            flash("Couldn't change auto-restart.", error: true)
+        }
+    }
+
+    func setJava(_ version: String) async {
+        guard let service else { return }
+        await run(successMessage: "Java version set.") {
+            try await service.setJavaVersion(self.serverId, version: version)
+            self.java = try? await service.javaVersion(self.serverId)
         }
     }
 
@@ -121,7 +155,9 @@ struct ServerSettingsView: View {
             }
 
             startupSection
+            javaSection
             variablesSection
+            behaviorSection
             networkSection
             accessSection
             maintenanceSection
@@ -225,6 +261,40 @@ struct ServerSettingsView: View {
             }
         } header: {
             Text("Environment variables")
+        }
+        .listRowBackground(Color.appCard)
+    }
+
+    @ViewBuilder private var javaSection: some View {
+        if let java = model.java {
+            Section {
+                Picker("Java version", selection: Binding(
+                    get: { java.selected },
+                    set: { sel in Task { await model.setJava(sel) } })) {
+                    Text("Automatic (\(java.auto))").tag("auto")
+                    ForEach(java.options, id: \.self) { major in
+                        Text("Java \(major)").tag(String(major))
+                    }
+                }
+            } header: {
+                Text("Java version")
+            } footer: {
+                Text("Currently using Java \(java.effective). Automatic picks the right JVM for your Minecraft version.")
+            }
+            .listRowBackground(Color.appCard)
+        }
+    }
+
+    private var behaviorSection: some View {
+        Section {
+            Toggle("Auto-restart on crash", isOn: Binding(
+                get: { model.autoRestart },
+                set: { on in model.autoRestart = on; Task { await model.setAutoRestart(on) } }))
+                .tint(.appPrimary)
+        } header: {
+            Text("Behavior")
+        } footer: {
+            Text("Automatically restart the server if it crashes.")
         }
         .listRowBackground(Color.appCard)
     }

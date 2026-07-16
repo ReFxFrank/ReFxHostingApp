@@ -22,11 +22,14 @@ final class AllocationsViewModel: ObservableObject {
         catch { state = .failed(.network(isOffline: false, underlying: "\(error)")) }
     }
 
-    func add() async {
+    /// The IP to prefill the add-port form with (the primary allocation's IP).
+    var defaultIP: String { state.value?.first(where: { $0.isPrimary })?.ip ?? state.value?.first?.ip ?? "" }
+
+    func add(ip: String, port: Int) async {
         guard let service, !isAdding else { return }
         isAdding = true; actionError = nil
         defer { isAdding = false }
-        do { try await service.addAllocation(serverId); await load() }
+        do { try await service.addAllocation(serverId, ip: ip, port: port); await load() }
         catch let error as APIError { actionError = error.userMessage }
         catch { actionError = "Couldn't add a port. Try again." }
     }
@@ -46,6 +49,8 @@ struct AllocationsView: View {
     @EnvironmentObject private var session: AppSession
     @StateObject private var model: AllocationsViewModel
 
+    @State private var showAdd = false
+
     init(serverId: String) { _model = StateObject(wrappedValue: AllocationsViewModel(serverId: serverId)) }
 
     var body: some View {
@@ -62,11 +67,16 @@ struct AllocationsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { Task { await model.add() } } label: {
+                Button { showAdd = true } label: {
                     if model.isAdding { ProgressView() } else { Image(systemName: "plus") }
                 }
                 .disabled(model.isAdding)
                 .accessibilityLabel("Add port")
+            }
+        }
+        .sheet(isPresented: $showAdd) {
+            AddAllocationSheet(defaultIP: model.defaultIP) { ip, port in
+                Task { await model.add(ip: ip, port: port) }
             }
         }
         .task { model.bind(session); if model.state.value == nil { await model.load() } }
@@ -95,6 +105,49 @@ struct AllocationsView: View {
         }
         .listStyle(.plain).scrollContentBackground(.hidden).screenBackground()
         .refreshable { await model.load() }
+    }
+}
+
+/// Attach a specific `ip:port`. The backend has no auto-assign, so the customer
+/// supplies a free port on the server's node (IP defaults to the primary's).
+private struct AddAllocationSheet: View {
+    let defaultIP: String
+    let onAdd: (String, Int) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var ip = ""
+    @State private var portText = ""
+
+    private var port: Int? { Int(portText.trimmingCharacters(in: .whitespaces)) }
+    private var isValid: Bool { !ip.trimmingCharacters(in: .whitespaces).isEmpty && (port.map { $0 > 0 && $0 <= 65535 } ?? false) }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("IP address", text: $ip)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        .keyboardType(.numbersAndPunctuation)
+                    TextField("Port (1–65535)", text: $portText)
+                        .keyboardType(.numberPad)
+                } header: {
+                    Text("Add a port")
+                } footer: {
+                    Text("Attach an additional port on this server's node. It must be a free port in your node's allocation pool — if it's taken you'll get an error.")
+                }
+            }
+            .scrollContentBackground(.hidden).screenBackground()
+            .navigationTitle("Add port").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") {
+                        if let port { onAdd(ip.trimmingCharacters(in: .whitespaces), port) }
+                        dismiss()
+                    }.disabled(!isValid)
+                }
+            }
+            .onAppear { if ip.isEmpty { ip = defaultIP } }
+        }
     }
 }
 
