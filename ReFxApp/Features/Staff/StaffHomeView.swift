@@ -152,6 +152,11 @@ struct StaffHomeView: View {
                           subtitle: "Storefront banners")
             }.buttonStyle(.plain)
 
+            NavigationLink { StatusIncidentsView() } label: {
+                ManageRow(icon: "exclamationmark.triangle", title: "Status incidents",
+                          subtitle: "Publish incidents & webhooks")
+            }.buttonStyle(.plain)
+
             NavigationLink { AdminSettingsView() } label: {
                 ManageRow(icon: "gearshape", title: "Settings",
                           subtitle: "Email, Steam, payment gateways")

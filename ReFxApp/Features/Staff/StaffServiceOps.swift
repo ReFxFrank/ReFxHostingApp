@@ -113,4 +113,49 @@ extension StaffService {
     }
 
     private struct BugCommentBody: Encodable { let body: String; let isInternal: Bool }
+
+    // MARK: Status incidents  (content.manage)
+
+    func incidents() async throws -> [StatusIncident] {
+        try await client.send(.get("admin/status/incidents"))
+    }
+
+    @discardableResult
+    func createIncident(_ body: CreateIncidentBody) async throws -> StatusIncident {
+        try await client.send(.post("admin/status/incidents", body: body))
+    }
+
+    @discardableResult
+    func addIncidentUpdate(_ id: String, _ body: AddIncidentUpdateBody) async throws -> StatusIncident {
+        try await client.send(.post("admin/status/incidents/\(id)/updates", body: body))
+    }
+
+    @discardableResult
+    func updateIncident(_ id: String, _ body: UpdateIncidentBody) async throws -> StatusIncident {
+        try await client.send(.patch("admin/status/incidents/\(id)", body: body))
+    }
+
+    func deleteIncident(_ id: String) async throws {
+        try await client.sendVoid(.delete("admin/status/incidents/\(id)"))
+    }
+
+    // MARK: Status webhooks  (content.manage)
+
+    func statusWebhooks() async throws -> [StatusWebhook] {
+        try await client.send(.get("admin/status/webhooks"))
+    }
+
+    /// Returns the created webhook including its one-time `secret`.
+    func createStatusWebhook(_ body: CreateWebhookBody) async throws -> StatusWebhook {
+        try await client.send(.post("admin/status/webhooks", body: body))
+    }
+
+    @discardableResult
+    func updateStatusWebhook(_ id: String, _ body: UpdateWebhookBody) async throws -> StatusWebhook {
+        try await client.send(.patch("admin/status/webhooks/\(id)", body: body))
+    }
+
+    func deleteStatusWebhook(_ id: String) async throws {
+        try await client.sendVoid(.delete("admin/status/webhooks/\(id)"))
+    }
 }
