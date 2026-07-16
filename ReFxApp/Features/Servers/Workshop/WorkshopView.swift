@@ -170,6 +170,11 @@ struct MinecraftView: View {
     @State private var isError = false
     @State private var confirm = false
 
+    @State private var worldStatus: LevelDatStatus?
+    @State private var worldMessage: String?
+    @State private var restoring = false
+    @State private var confirmRestore = false
+
     private let loaders = ["vanilla", "paper", "fabric", "forge", "neoforge"]
     private var needsBuild: Bool { ["fabric", "forge", "neoforge"].contains(loader) }
     private var buildLabel: String {
@@ -226,10 +231,18 @@ struct MinecraftView: View {
                 }.disabled(isSaving)
             }
             .listRowBackground(Color.appCard)
+
+            worldRecoverySection
         }
         .scrollContentBackground(.hidden).screenBackground()
         .navigationTitle("Minecraft").navigationBarTitleDisplayMode(.inline)
-        .task { await loadVersions(); await loadBuilds() }
+        .task { await loadVersions(); await loadBuilds(); await loadWorldStatus() }
+        .confirmationDialog("Restore level.dat?", isPresented: $confirmRestore, titleVisibility: .visible) {
+            Button("Restore") { Task { await restoreWorld() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Replaces the current level.dat with Minecraft's automatic backup copy. The corrupt file is preserved alongside it.")
+        }
         .onChange(of: loader) { _ in
             version = "latest"; loaderVersion = "latest"; builds = []
             Task { await loadVersions(); await loadBuilds() }
@@ -244,6 +257,54 @@ struct MinecraftView: View {
         } message: {
             Text("The server will reinstall with \(loader.capitalized) \(version). It will be offline during the process.")
         }
+    }
+
+    @ViewBuilder private var worldRecoverySection: some View {
+        if let status = worldStatus {
+            Section {
+                HStack {
+                    Label(status.looksCorrupt ? "World may be corrupt" : "World looks healthy",
+                          systemImage: status.looksCorrupt ? "exclamationmark.triangle.fill" : "checkmark.seal.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(status.looksCorrupt ? .appWarning : .appSuccess)
+                }
+                if status.restorable {
+                    Button {
+                        confirmRestore = true
+                    } label: {
+                        HStack { if restoring { ProgressView() }; Text("Restore level.dat from backup") }
+                    }.disabled(restoring)
+                } else if status.looksCorrupt {
+                    Text("No backup copy is available to restore from.")
+                        .font(.caption).foregroundStyle(.appMuted)
+                }
+                if let worldMessage {
+                    Text(worldMessage).font(.footnote)
+                        .foregroundStyle(worldMessage.hasPrefix("Restored") ? .appSuccess : .appDestructive)
+                }
+            } header: {
+                Text("World recovery — \(status.world)")
+            } footer: {
+                Text("Detects and repairs a corrupt level.dat using Minecraft's automatic backup.")
+            }
+            .listRowBackground(Color.appCard)
+        }
+    }
+
+    private func loadWorldStatus() async {
+        // Only meaningful for Minecraft; tolerate 400/unsupported.
+        worldStatus = try? await session.minecraft.levelDatStatus(serverId)
+    }
+
+    private func restoreWorld() async {
+        restoring = true; worldMessage = nil
+        defer { restoring = false }
+        do {
+            let result = try await session.minecraft.restoreLevelDat(serverId)
+            worldMessage = result.restored ? "Restored from backup." : "Nothing to restore."
+            await loadWorldStatus()
+        } catch let error as APIError { worldMessage = error.userMessage }
+        catch { worldMessage = "Couldn't restore level.dat." }
     }
 
     private func loadVersions() async {

@@ -6,6 +6,7 @@ import UIKit
 final class ServerDetailViewModel: ObservableObject {
     @Published private(set) var detail: LoadState<Server>
     @Published private(set) var snapshot: ResourceSnapshot?
+    @Published private(set) var players: PlayersResult?
     @Published private(set) var powerInFlight: PowerSignal?
     @Published var actionError: String?
 
@@ -64,6 +65,8 @@ final class ServerDetailViewModel: ObservableObject {
             detail = .loaded(server)
             if liveState == nil { liveState = server.state }
             await loadStats(cpuCores: server.cpuCores, diskTotalMb: server.diskMb.map(Double.init))
+            // Player list is Minecraft-only; tolerate 400/unsupported silently.
+            players = try? await service.players(serverId)
         } catch let error as APIError {
             if detail.value == nil { detail = .failed(error) }
         } catch {

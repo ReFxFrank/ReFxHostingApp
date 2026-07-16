@@ -33,18 +33,18 @@ audit, alerts, email/steam settings.
 - [x] **Profile editing** — `PATCH /account` (firstName/lastName). `EditProfileView` from the Account tab. *(avatar upload deferred)*
 
 ## 1.2 — secondary customer features
-- [x] **Allocations / ports** — `GET/POST/DELETE /servers/:id/allocations`. `AllocationsView` under Settings → Network.
-- [ ] **Custom domains / vanity address** — `/servers/:id/domains`, `/vanity-address` *(needs response DTO)*
+- [x] **Allocations / ports** — `GET/POST/DELETE /servers/:id/allocations`. `AllocationsView` under Settings → Network (POST needs {ip,port}).
+- [ ] **Custom domains / vanity address** — `/servers/:id/domains`, `/vanity-address` *(WEB_APP-only; needs a reliable web-app flag on the client to gate the UI — deferred)*
 - [x] **Update game** — `POST /servers/:id/update` (pull latest build). Settings → Maintenance.
-- [ ] **Auto-restart toggle** — `PATCH /servers/:id/auto-restart` *(needs current-value field on GET /servers/:id + PATCH body)*
-- [ ] **Java version picker (MC)** — `GET/PUT /servers/:id/java-version`
-- [ ] **level.dat repair (MC)** — `GET .../world/level-dat-status`, `POST .../restore-level-dat`
+- [x] **Auto-restart toggle** — `PATCH /servers/:id/auto-restart {enabled}`; state from `environment.REFX_AUTO_RESTART`. Settings → Behavior.
+- [x] **Java version picker (MC)** — `GET/PUT /servers/:id/java-version`. Settings → Java version (auto + majors).
+- [x] **level.dat repair (MC)** — `GET .../world/level-dat-status`, `POST .../restore-level-dat`. Minecraft → World recovery.
 - [ ] **Full TeamSpeak mgmt** — kick/ban/move/unban/channel-limit/license/audit/bandwidth
-- [ ] **Backup lock / rename** — `PATCH /servers/:id/backups/:id`
-- [ ] **Workshop reorder** — `PATCH /servers/:id/workshop/reorder`
-- [ ] **File chmod** — `POST /servers/:id/files/chmod`
-- [ ] **Stats history / charts** — `GET /servers/:id/stats/history`
-- [ ] **Players list** — `GET /servers/:id/players`
+- [x] **Backup lock** — `PATCH /servers/:id/backups/:id {isLocked}` (rename N/A — name is create-time only).
+- [x] **Workshop reorder** — `PATCH /servers/:id/workshop/reorder {ids}`. EditButton drag.
+- [x] **File chmod** — `POST /servers/:id/files/chmod {mode,path}`. Files context menu.
+- [x] **Stats history / charts** — `GET /servers/:id/stats/history?range=`. `StatsHistoryView` (Swift Charts) from the overview.
+- [x] **Players list** — `GET /servers/:id/players`. Players card on the overview (MC).
 - [ ] **Switch-game history** — `GET /servers/:id/game-history`
 - [ ] **Bug reports** — `/bugs` (file/comment/attach/track)
 - [ ] **Knowledge base** — `GET /support/kb[/:slug]`
