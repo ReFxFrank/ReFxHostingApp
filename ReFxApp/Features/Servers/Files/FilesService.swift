@@ -47,7 +47,23 @@ struct FilesService {
         return URL(string: signed.url)
     }
 
+    /// Compress files/folders into an archive; returns the new archive's path.
+    /// `POST files/compress { paths: [String] } → { path }`.
+    @discardableResult
+    func compress(_ serverId: String, paths: [String]) async throws -> String {
+        let result: PathResult = try await client.send(
+            .post("servers/\(serverId)/files/compress", body: PathsBody(paths: paths)))
+        return result.path
+    }
+
+    /// Extract an archive in place. `POST files/decompress { path } → void`.
+    func decompress(_ serverId: String, path: String) async throws {
+        try await client.sendVoid(
+            .post("servers/\(serverId)/files/decompress", body: PathBody(path: path)))
+    }
+
     private struct WriteBody: Encodable { let path: String; let content: String }
+    private struct PathResult: Decodable { let path: String }
     private struct PathBody: Encodable { let path: String }
     private struct RenameBody: Encodable { let from: String; let to: String }
     private struct PathsBody: Encodable { let paths: [String] }

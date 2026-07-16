@@ -63,6 +63,16 @@ final class FilesBrowserViewModel: ObservableObject {
         return try? await service.downloadURL(serverId, path: entry.path)
     }
 
+    func compress(_ entry: FileEntry) async {
+        guard let service, let serverId else { return }
+        await run(haptic: true) { _ = try await service.compress(serverId, paths: [entry.path]) }
+    }
+
+    func decompress(_ entry: FileEntry) async {
+        guard let service, let serverId else { return }
+        await run(haptic: true) { try await service.decompress(serverId, path: entry.path) }
+    }
+
     /// Run a mutation then reload; surface errors in `actionError`.
     private func run(haptic: Bool = false, _ work: () async throws -> Void) async {
         actionError = nil

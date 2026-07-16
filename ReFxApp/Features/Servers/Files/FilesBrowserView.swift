@@ -80,6 +80,35 @@ struct FilesBrowserView: View {
                         } label: { Label("Rename", systemImage: "pencil") }
                             .tint(.appPrimary)
                     }
+                    .swipeActions(edge: .leading) {
+                        if isArchive(entry) {
+                            Button {
+                                Task { await model.decompress(entry) }
+                            } label: { Label("Extract", systemImage: "archivebox") }
+                                .tint(.appSuccess)
+                        } else {
+                            Button {
+                                Task { await model.compress(entry) }
+                            } label: { Label("Compress", systemImage: "archivebox") }
+                                .tint(.appSecondary)
+                        }
+                    }
+                    .contextMenu {
+                        Button {
+                            Task { await model.compress(entry) }
+                        } label: { Label("Compress to archive", systemImage: "archivebox") }
+                        if isArchive(entry) {
+                            Button {
+                                Task { await model.decompress(entry) }
+                            } label: { Label("Extract here", systemImage: "arrow.up.bin") }
+                        }
+                        Button { renaming = entry; renameText = entry.name } label: {
+                            Label("Rename", systemImage: "pencil")
+                        }
+                        Button(role: .destructive) {
+                            Task { await model.delete(entry) }
+                        } label: { Label("Delete", systemImage: "trash") }
+                    }
             }
         }
         .listStyle(.plain)
@@ -104,6 +133,14 @@ struct FilesBrowserView: View {
     private var title: String {
         if model.path == "/" || model.path.isEmpty { return "Files" }
         return (model.path as NSString).lastPathComponent
+    }
+
+    /// Extensions the server can extract via `files/decompress`.
+    private func isArchive(_ entry: FileEntry) -> Bool {
+        guard !entry.isDir else { return false }
+        let name = entry.name.lowercased()
+        return [".zip", ".tar", ".tar.gz", ".tgz", ".gz", ".tar.bz2", ".tbz2", ".rar", ".7z"]
+            .contains { name.hasSuffix($0) }
     }
 }
 
