@@ -157,6 +157,11 @@ struct StaffHomeView: View {
                           subtitle: "Publish incidents & webhooks")
             }.buttonStyle(.plain)
 
+            NavigationLink { SupportSettingsView() } label: {
+                ManageRow(icon: "lifepreserver", title: "Support settings",
+                          subtitle: "Canned replies, KB, categories")
+            }.buttonStyle(.plain)
+
             NavigationLink { AdminSettingsView() } label: {
                 ManageRow(icon: "gearshape", title: "Settings",
                           subtitle: "Email, Steam, payment gateways")

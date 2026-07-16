@@ -158,4 +158,52 @@ extension StaffService {
     func deleteStatusWebhook(_ id: String) async throws {
         try await client.sendVoid(.delete("admin/status/webhooks/\(id)"))
     }
+
+    // MARK: Support settings — canned responses  (support.read / support.manage)
+
+    func cannedResponses() async throws -> [CannedResponse] {
+        try await client.send(.get("support/canned-responses"))
+    }
+    @discardableResult
+    func createCannedResponse(_ body: CannedResponseBody) async throws -> CannedResponse {
+        try await client.send(.post("support/canned-responses", body: body))
+    }
+    @discardableResult
+    func updateCannedResponse(_ id: String, _ body: CannedResponseBody) async throws -> CannedResponse {
+        try await client.send(.patch("support/canned-responses/\(id)", body: body))
+    }
+    func deleteCannedResponse(_ id: String) async throws {
+        try await client.sendVoid(.delete("support/canned-responses/\(id)"))
+    }
+
+    // MARK: Support settings — KB articles (slug-keyed; no delete route)
+
+    func kbArticles() async throws -> [KbArticle] {
+        try await client.send(.get("support/kb-articles"))
+    }
+    @discardableResult
+    func createKbArticle(_ body: CreateKbArticleBody) async throws -> KbArticle {
+        try await client.send(.post("support/kb-articles", body: body))
+    }
+    @discardableResult
+    func updateKbArticle(_ slug: String, _ body: UpdateKbArticleBody) async throws -> KbArticle {
+        try await client.send(.patch("support/kb-articles/\(slug)", body: body))
+    }
+
+    // MARK: Support settings — ticket categories
+
+    func ticketCategories() async throws -> [TicketCategory] {
+        try await client.send(.get("support/categories"))
+    }
+    @discardableResult
+    func createCategory(_ body: CreateCategoryBody) async throws -> TicketCategory {
+        try await client.send(.post("support/categories", body: body))
+    }
+    @discardableResult
+    func updateCategory(_ id: String, _ body: UpdateCategoryBody) async throws -> TicketCategory {
+        try await client.send(.patch("support/categories/\(id)", body: body))
+    }
+    func deleteCategory(_ id: String) async throws {
+        try await client.sendVoid(.delete("support/categories/\(id)"))
+    }
 }
