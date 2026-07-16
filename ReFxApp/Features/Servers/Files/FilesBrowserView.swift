@@ -13,6 +13,8 @@ struct FilesBrowserView: View {
     @State private var newFolderName = ""
     @State private var renaming: FileEntry?
     @State private var renameText = ""
+    @State private var chmodTarget: FileEntry?
+    @State private var chmodText = ""
     @State private var showImporter = false
     @State private var showSftp = false
 
@@ -70,6 +72,18 @@ struct FilesBrowserView: View {
             }
             Button("Cancel", role: .cancel) {}
         }
+        .alert("Permissions", isPresented: Binding(
+            get: { chmodTarget != nil }, set: { if !$0 { chmodTarget = nil } })) {
+            TextField("Mode (e.g. 0755)", text: $chmodText)
+                .keyboardType(.numbersAndPunctuation)
+                .textInputAutocapitalization(.never).autocorrectionDisabled()
+            Button("Apply") {
+                if let entry = chmodTarget { Task { await model.chmod(entry, mode: chmodText) } }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Octal permission mode, e.g. 0644 for files or 0755 for scripts.")
+        }
         .task {
             model.bind(serverId: serverId, service: session.files)
             if model.state.value == nil { await model.load() }
@@ -118,6 +132,14 @@ struct FilesBrowserView: View {
                         }
                         Button { renaming = entry; renameText = entry.name } label: {
                             Label("Rename", systemImage: "pencil")
+                        }
+                        if !entry.isDir {
+                            Button {
+                                // Prefill a sensible octal default; the agent's `mode`
+                                // string isn't guaranteed octal, so don't echo it back.
+                                chmodTarget = entry
+                                chmodText = entry.name.lowercased().hasSuffix(".sh") ? "0755" : "0644"
+                            } label: { Label("Permissions…", systemImage: "lock.rotation") }
                         }
                         Button(role: .destructive) {
                             Task { await model.delete(entry) }

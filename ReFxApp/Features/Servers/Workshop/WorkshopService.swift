@@ -27,8 +27,16 @@ struct WorkshopService {
         try await client.sendVoid(.post("servers/\(serverId)/workshop/apply"))
     }
 
+    /// `PATCH /servers/:id/workshop/reorder { ids }` — WorkshopMod row ids in the
+    /// new display order (sortOrder = array index). Permission: files.write.
+    func reorder(_ serverId: String, ids: [String]) async throws {
+        try await client.sendVoid(
+            .patch("servers/\(serverId)/workshop/reorder", body: ReorderBody(ids: ids)))
+    }
+
     private struct AddBody: Encodable { let input: String }
     private struct ToggleBody: Encodable { let enabled: Bool }
+    private struct ReorderBody: Encodable { let ids: [String] }
 }
 
 /// `/servers/:id/minecraft` (servers.controller.ts). Unified Minecraft egg:

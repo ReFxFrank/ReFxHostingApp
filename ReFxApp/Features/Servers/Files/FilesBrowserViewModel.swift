@@ -74,6 +74,14 @@ final class FilesBrowserViewModel: ObservableObject {
         await run(haptic: true) { try await service.decompress(serverId, path: entry.path) }
     }
 
+    /// Change a file's permissions (`mode` is an octal string like "0755").
+    func chmod(_ entry: FileEntry, mode: String) async {
+        guard let service, let serverId else { return }
+        let clean = mode.trimmingCharacters(in: .whitespaces)
+        guard !clean.isEmpty else { return }
+        await run(haptic: true) { try await service.chmod(serverId, path: entry.path, mode: clean) }
+    }
+
     /// Upload a picked local file into this directory (raw bytes, ≤ 32 MiB).
     func upload(fileURL: URL) async {
         guard let service, let serverId else { return }

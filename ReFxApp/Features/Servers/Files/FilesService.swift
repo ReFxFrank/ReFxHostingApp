@@ -35,6 +35,13 @@ struct FilesService {
             .post("servers/\(serverId)/files/rename", body: RenameBody(from: from, to: to)))
     }
 
+    /// Change a file's permissions. `POST files/chmod { mode, path }` — `mode` is
+    /// an octal string like "0755". Permission: files.write.
+    func chmod(_ serverId: String, path: String, mode: String) async throws {
+        try await client.sendVoid(
+            .post("servers/\(serverId)/files/chmod", body: ChmodBody(mode: mode, path: path)))
+    }
+
     func delete(_ serverId: String, paths: [String]) async throws {
         try await client.sendVoid(
             .post("servers/\(serverId)/files/delete", body: PathsBody(paths: paths)))
@@ -97,6 +104,7 @@ struct FilesService {
     private struct PathBody: Encodable { let path: String }
     private struct RenameBody: Encodable { let from: String; let to: String }
     private struct PathsBody: Encodable { let paths: [String] }
+    private struct ChmodBody: Encodable { let mode: String; let path: String }
 }
 
 struct UploadResult: Decodable { let status: String; let path: String; let bytes: Int }

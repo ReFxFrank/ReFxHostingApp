@@ -36,6 +36,18 @@ final class WorkshopViewModel: ObservableObject {
         await run(haptic: true) { try await $0.remove(self.serverId, modId: mod.id) }
     }
 
+    /// Move items and persist the new order (sortOrder = index). Optimistically
+    /// updates the local list so the row animates immediately.
+    func move(from offsets: IndexSet, to destination: Int) async {
+        guard let service, var items = state.value else { return }
+        items.move(fromOffsets: offsets, toOffset: destination)
+        state = .loaded(items)
+        actionError = nil
+        do { try await service.reorder(serverId, ids: items.map(\.id)) }
+        catch let error as APIError { actionError = error.userMessage; await load() }
+        catch { actionError = "Couldn't save the new order."; await load() }
+    }
+
     func apply() async {
         guard let service else { return }
         actionError = nil
@@ -83,6 +95,7 @@ struct WorkshopView: View {
         .navigationTitle("Workshop")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) { EditButton() }
             ToolbarItem(placement: .topBarTrailing) { Button { input = ""; showAdd = true } label: { Image(systemName: "plus") }
                 .accessibilityLabel("Add item") }
         }
@@ -117,6 +130,9 @@ struct WorkshopView: View {
                         Label("Remove", systemImage: "trash")
                     }
                 }
+            }
+            .onMove { offsets, destination in
+                Task { await model.move(from: offsets, to: destination) }
             }
         }
         .listStyle(.plain).scrollContentBackground(.hidden).screenBackground()
