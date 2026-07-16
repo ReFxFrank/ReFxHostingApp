@@ -11,7 +11,7 @@ struct SftpDetailsView: View {
     @State private var details: LoadState<SftpDetails> = .idle
     @State private var password: String?
     @State private var rotating = false
-    @State private var error: String?
+    @State private var errorMessage: String?
     @State private var confirmRotate = false
 
     var body: some View {
@@ -26,8 +26,8 @@ struct SftpDetailsView: View {
                         content: { detailCard($0) },
                         skeleton: { SkeletonBlock(height: 150) })
                     passwordCard
-                    if let error {
-                        Text(error).font(.footnote).foregroundStyle(.appDestructive)
+                    if let errorMessage {
+                        Text(errorMessage).font(.footnote).foregroundStyle(.appDestructive)
                     }
                     Text("Connect with any SFTP client (FileZilla, Cyberduck, WinSCP…). Authentication is password-only — there are no SSH keys.")
                         .font(.caption).foregroundStyle(.appMuted)
@@ -90,12 +90,12 @@ struct SftpDetailsView: View {
     }
 
     private func rotate() async {
-        rotating = true; error = nil
+        rotating = true; errorMessage = nil
         defer { rotating = false }
         do {
             password = try await session.files.rotateSftpPassword(serverId)
             UINotificationFeedbackGenerator().notificationOccurred(.success)
-        } catch let e as APIError { error = e.userMessage }
-        catch { error = "Couldn't rotate the password. Try again." }
+        } catch let e as APIError { errorMessage = e.userMessage }
+        catch { errorMessage = "Couldn't rotate the password. Try again." }
     }
 }
