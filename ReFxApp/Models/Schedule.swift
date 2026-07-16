@@ -27,6 +27,23 @@ struct ScheduleTask: Codable, Identifiable, Equatable {
     let payload: String
 }
 
+/// A task being composed in the create-schedule form (runs in list order).
+struct ScheduleTaskInput: Identifiable, Equatable {
+    let id = UUID()
+    var action: ScheduleAction = .command
+    var payload: String = ""
+
+    /// Placeholder/help text for the payload of a given action.
+    var payloadHint: String {
+        switch action {
+        case .power: return "start, stop, restart or kill"
+        case .command: return "Console command to run"
+        case .backup: return "Backup name (optional)"
+        case .unknown: return "Payload"
+        }
+    }
+}
+
 /// `GET /servers/:id/schedules`.
 struct Schedule: Codable, Identifiable, Equatable {
     let id: String

@@ -23,10 +23,10 @@ struct SchedulesService {
     }
 
     func create(_ serverId: String, name: String, cron: String,
-                onlyWhenOnline: Bool, action: ScheduleAction, payload: String) async throws {
+                onlyWhenOnline: Bool, tasks: [ScheduleTaskInput]) async throws {
         let body = CreateBody(
             name: name, cron: cron, onlyWhenOnline: onlyWhenOnline, isActive: true,
-            tasks: [TaskBody(action: action.rawValue, payload: payload)])
+            tasks: tasks.map { TaskBody(action: $0.action.rawValue, payload: $0.payload) })
         try await client.sendVoid(.post("servers/\(serverId)/schedules", body: body))
     }
 
