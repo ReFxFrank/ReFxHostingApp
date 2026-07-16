@@ -206,4 +206,35 @@ extension StaffService {
     func deleteCategory(_ id: String) async throws {
         try await client.sendVoid(.delete("support/categories/\(id)"))
     }
+
+    // MARK: Settings hub — vanity / referrals / express-backups / backup-storage  (settings.manage)
+
+    func vanitySettings() async throws -> VanitySettings {
+        try await client.send(.get("admin/settings/vanity"))
+    }
+    func setVanitySettings(_ body: SetVanitySettingsBody) async throws {
+        try await client.sendVoid(.patch("admin/settings/vanity", body: body))
+    }
+
+    func referralSettings() async throws -> ReferralSettings {
+        try await client.send(.get("admin/settings/referrals"))
+    }
+    func setReferralSettings(_ body: SetReferralSettingsBody) async throws {
+        try await client.sendVoid(.patch("admin/settings/referrals", body: body))
+    }
+
+    func expressBackupSettings() async throws -> ExpressBackupSettings {
+        try await client.send(.get("admin/settings/express-backups"))
+    }
+    func setExpressBackupSettings(_ body: SetExpressBackupSettingsBody) async throws {
+        try await client.sendVoid(.patch("admin/settings/express-backups", body: body))
+    }
+
+    func backupStorageConfig() async throws -> BackupStorageConfigMasked {
+        try await client.send(.get("admin/settings/backup-storage"))
+    }
+    /// PATCH returns `{ config, push }`; we ignore the body and reload.
+    func setBackupStorageConfig(_ body: SetBackupStorageBody) async throws {
+        try await client.sendVoid(.patch("admin/settings/backup-storage", body: body))
+    }
 }
